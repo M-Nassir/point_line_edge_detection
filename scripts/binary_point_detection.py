@@ -6,6 +6,13 @@ Isolated pixel detection - a highly specialised application.
 @author: Nassir Mohammad
 """
 
+# %%
+############################
+#
+#           Setup
+#
+############################
+
 # %% import image handling
 from scripts.utilities import show_detected_pixels, detect_isolated_points
 import cv2
@@ -18,7 +25,15 @@ from perception import Perception
 k = 3
 binary_image_flag = True
 
-# %% Read image
+
+# %%
+############################
+#
+#       Read Images
+#
+############################
+
+# %% path to images
 data_path = ("/Users/nassirmohammad/projects/computer_vision/"
              "percept_detection/point_line_edge_detection/data/")
 
@@ -87,9 +102,10 @@ ax1.imshow(img, cmap='gray')
 plt.show()
 binary_image_flag = True
 
+# %%
 ############################
 #
-# Template Matching
+#   Template Matching
 #
 ############################
 
@@ -155,10 +171,15 @@ plt.show()
 
 # hm = cv2.erode(img, kernel1)
 
+# fig = plt.figure(figsize=(20, 8))
+# ax1 = fig.add_subplot(111)
+# ax1.imshow(output, cmap='gray')
+# plt.show()
 
+# %%
 ############################
 #
-# Image Derivatives
+#   Image Derivatives
 #
 ############################
 
@@ -169,20 +190,13 @@ dst = cv2.Laplacian(img, ddepth, ksize=3)
 # converting back to uint8
 abs_dst = np.abs(dst)  # cv2.convertScaleAbs(dst)
 
-# fig = plt.figure(figsize=(20, 8))
-# ax1 = fig.add_subplot(111)
-# ax1.imshow(abs_dst, cmap='gray')
-# plt.show()
-
 # find highest pixel value in image and take 90% of it
-threshold = int(0.9 * np.max(abs_dst))
+threshold = int(0.99 * np.max(abs_dst))
 
 output = np.where(abs_dst > threshold, 1, 0)
 
-# fig = plt.figure(figsize=(20, 8))
-# ax1 = fig.add_subplot(111)
-# ax1.imshow(output, cmap='gray')
-# plt.show()
+print("Number of isolated pixels located by Laplacian is: {}"
+      .format(np.sum(output)))
 
 fig = plt.figure(figsize=(20, 8))
 plt.gray()
@@ -193,9 +207,10 @@ ax2.imshow(output)
 plt.show()
 
 
+# %%
 ############################
 #
-# Neural Network
+#       Neural Network
 #
 ############################
 
@@ -218,58 +233,3 @@ else:
 
 # show original image and detected isolated pixels
 show_detected_pixels(img, filtered_response, kernel_size=3)
-
-############################
-#
-# Neural Network Learning
-#
-############################
-
-# can the neural network learn to detect isolated pixels, by these pixels
-# being the ones that carry the meaning in the image data that is exposed to?
-# An example of plasticity, or environmental conditioning together with
-# critical periods of development?
-
-
-############################
-
-# SCRAP Code
-
-############################
-
-# %% show original and filtered image (without isolated pixels)
-# fig = plt.figure(figsize=(20, 8))
-# plt.gray()
-# ax1 = fig.add_subplot(121)
-# ax2 = fig.add_subplot(122)
-
-# result1 = np.array(filtered_image).reshape(img.shape[0]-k+1, -1).astype(int)
-
-# ax1.imshow(img, cmap='gray')
-# ax2.imshow(result1, cmap='gray')
-# plt.show()
-
-
-# %%
-a = np.array([10, 10, 10,
-              10, 55, 55,
-              10, 55, 55])
-
-clf = Perception()
-clf.fit_predict(a)
-print(int(np.median(a)))
-print(clf.anomalies_)
-
-# %% compare with median filtered image
-fig = plt.figure(figsize=(20, 8))
-plt.gray()
-ax1 = fig.add_subplot(121)
-ax2 = fig.add_subplot(122)
-ascent = np.array(filtered_image).reshape(img.shape[0]-k+1, -1)
-# scipy.signal.medfilt2d(input, kernel_size=3)
-# result = ndimage.median_filter(img, size=3)
-
-result = cv2.medianBlur(img, 3)
-ax1.imshow(ascent)
-ax2.imshow(result)
-plt.show()

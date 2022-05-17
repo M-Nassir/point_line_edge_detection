@@ -20,7 +20,7 @@ binary_image_flag = True
 
 # %% Read image
 data_path = ("/Users/nassirmohammad/projects/computer_vision/"
-             "point_line_edge_detection/point_line_edge_detection/data/")
+             "percept_detection/point_line_edge_detection/data/")
 
 # binary images
 # img_name = "circles_matlab.png"
@@ -95,11 +95,47 @@ binary_image_flag = True
 
 # %% hit and miss transform for central white pixel only
 
-# load image, ensure binary, remove bar on the left
-# input_image = cv2.imread('calc.png', 0)
 input_image = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)[1]
 
-# # ---
+kernel = np.array([[-1, -1, -1],
+                   [-1,  1, -1],
+                   [-1, -1, -1]], dtype="int")
+
+single_pixels = cv2.morphologyEx(input_image, cv2.MORPH_HITMISS, kernel)
+single_pixels_inv = cv2.bitwise_not(single_pixels)
+hm = cv2.bitwise_and(input_image, input_image, mask=single_pixels_inv)
+
+# show figure
+fig = plt.figure(figsize=(20, 8))
+ax1 = fig.add_subplot(111)
+ax1.imshow(single_pixels_inv, cmap='gray')
+plt.show()
+
+# %% hit and miss transform for central black pixel only
+
+input_image = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)[1]
+
+kernel = np.array([[1, 1, 1],
+                   [1,  -1, 1],
+                   [1, 1, 1]], dtype="int")
+
+single_pixels = cv2.morphologyEx(input_image, cv2.MORPH_HITMISS, kernel)
+single_pixels_inv = cv2.bitwise_not(single_pixels)
+hm = cv2.bitwise_and(input_image, input_image, mask=single_pixels_inv)
+
+# show figure
+fig = plt.figure(figsize=(20, 8))
+ax1 = fig.add_subplot(111)
+ax1.imshow(single_pixels_inv, cmap='gray')
+plt.show()
+
+# %% TODO: hit or miss tranform using erosion, and erosion of complement
+
+# load image, ensure binary, remove bar on the left
+# input_image = cv2.imread('calc.png', 0)
+# input_image = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)[1]
+
+# # --- erode with kernel and complement
 # input_image = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)[1]
 # input_image_comp = cv2.bitwise_not(input_image)  # could just use 255-img
 
@@ -119,23 +155,6 @@ input_image = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)[1]
 
 # hm = cv2.erode(img, kernel1)
 
-# # ---
-
-# let's say "image" is a thresholded image
-
-kernel = np.array([[-1, -1, -1],
-                   [-1,  1, -1],
-                   [-1, -1, -1]], dtype="int")
-
-single_pixels = cv2.morphologyEx(input_image, cv2.MORPH_HITMISS, kernel)
-single_pixels_inv = cv2.bitwise_not(single_pixels)
-hm = cv2.bitwise_and(input_image, input_image, mask=single_pixels_inv)
-
-# show figure
-fig = plt.figure(figsize=(20, 8))
-ax1 = fig.add_subplot(111)
-ax1.imshow(single_pixels_inv, cmap='gray')
-plt.show()
 
 ############################
 #

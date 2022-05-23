@@ -228,26 +228,18 @@ plt.show()
 
 # %% detect isolated pixels using neural network
 if binary_image_flag is True:
-    filtered_image, filtered_response = \
-        detect_isolated_points(img,
-                               excite_num=1,
-                               inhib_sum_num=0, kernel_size=kernel_size)
+    input_image = img
 else:
     # blur the image, often said to be a process in vision before derivatives
-    blurred_img = cv2.GaussianBlur(img, (3, 3), 0)
+    input_image = cv2.GaussianBlur(img, (3, 3), 0)
 
-    # show blurred image
-    fig = plt.figure(figsize=(20, 8))
-    ax1 = fig.add_subplot(111)
-    ax1.imshow(blurred_img, cmap='gray')
-    plt.show()
+filtered_image, filtered_response = \
+    detect_isolated_points(input_image,
+                           excite_num=1,
+                           inhib_sum_num=0, kernel_size=kernel_size)
 
-    filtered_image, filtered_response = \
-        detect_isolated_points(blurred_img, excite_num=1,
-                               inhib_sum_num=0, kernel_size=kernel_size)
-
-# show original image and detected isolated pixels
-# show_detected_pixels(img, filtered_response, kernel_size=3)
+print("Number of isolated pixels located by net is: {}"
+      .format(np.sum(filtered_response)))
 
 # %% show only anomaly response pixels
 n = img.shape[0]

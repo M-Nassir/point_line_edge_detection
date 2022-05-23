@@ -6,7 +6,6 @@ Isolated pixel detection - a highly specialised application.
 @author: Nassir Mohammad
 """
 
-# TODO: ensure images are actually binary,
 # put imshow into function in utilties
 # %%
 ############################

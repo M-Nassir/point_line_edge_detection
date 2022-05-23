@@ -47,7 +47,10 @@ data_path = ("/Users/nassirmohammad/projects/computer_vision/"
 img_name = "circles_matlab.png"
 img1 = data_path + img_name
 im = Image.open(img1).convert('L')
-img = np.array(im)
+img = np.array(im)  # array([  0, 255], dtype=uint8)
+
+# ensure image is binary of values {0, 255}
+assert ((img == 0) | (img == 255)).all()
 
 # add the isolated pixels
 img[200][175] = 0
@@ -68,7 +71,13 @@ binary_image_flag = True
 img_name = "calc.png"  # (already has isolated pixels)
 img1 = data_path + img_name
 im = Image.open(img1).convert('L')
-img = np.array(im)
+img_original = np.array(im)  # array([  0, 109, 128, 255], dtype=uint8)
+
+# binarize the image
+img = cv2.threshold(img_original, 10, 255, cv2.THRESH_BINARY)[1]
+
+# ensure image is binary of values {0, 255}
+assert ((img == 0) | (img == 255)).all()
 
 # show figure
 fig = plt.figure(figsize=(20, 8))
@@ -84,7 +93,13 @@ binary_image_flag = True
 img_name = "crosses.png"
 img1 = data_path + img_name
 im = Image.open(img1).convert('L')
-img = np.array(im)
+img_original = np.array(im)  # array([ 20, 235], dtype=uint8)
+
+# binarize the image
+img = cv2.threshold(img_original, 20, 255, cv2.THRESH_BINARY)[1]
+
+# ensure image is binary of values {0, 255}
+assert ((img == 0) | (img == 255)).all()
 
 # add the isolated pixels
 img[200][175] = 255
@@ -107,8 +122,9 @@ binary_image_flag = True
 
 # %% hit and miss transform for central white pixel only
 
-input_image = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)[1]
+# input_image = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)[1]
 
+input_image = img
 kernel = np.array([[-1, -1, -1],
                    [-1,  1, -1],
                    [-1, -1, -1]], dtype="int")
@@ -125,10 +141,11 @@ plt.show()
 
 # %% hit and miss transform for central black pixel only
 
-input_image = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)[1]
+# input_image = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)[1]
 
+input_image = img
 kernel = np.array([[1, 1, 1],
-                   [1,  -1, 1],
+                   [1, -1, 1],
                    [1, 1, 1]], dtype="int")
 
 single_pixels = cv2.morphologyEx(input_image, cv2.MORPH_HITMISS, kernel)
@@ -187,7 +204,7 @@ dst = cv2.Laplacian(img, ddepth, ksize=3)
 abs_dst = np.abs(dst)  # cv2.convertScaleAbs(dst)
 
 # find highest pixel value in image and take 90% of it
-threshold = int(0.99 * np.max(abs_dst))
+threshold = int(0.9 * np.max(abs_dst))
 
 output = np.where(abs_dst > threshold, 1, 0)
 
@@ -240,14 +257,15 @@ m = img.shape[1]
 new_image = np.array(filtered_response)
 new_image = new_image.reshape(n-kernel_size+1, m-kernel_size+1)
 
-new_im = Image.fromarray((new_image * 255).astype(np.uint8))
+# map the [0,1] image to [0,255]
+new_image = Image.fromarray((new_image * 255).astype(np.uint8))
+
 fig = plt.figure(figsize=(20, 8))
 plt.gray()
 ax1 = fig.add_subplot(121)
 ax2 = fig.add_subplot(122)
-result1 = new_im
 ax1.imshow(img)
-ax2.imshow(result1)
+ax2.imshow(new_image)
 plt.show()
 
 # %% show filtered image
@@ -255,15 +273,16 @@ n = img.shape[0]
 m = img.shape[1]
 
 new_image = np.array(filtered_image)
-new_image = new_image.reshape(n-kernel_size+1, m-kernel_size+1)
+new_image = \
+    new_image.reshape(n-kernel_size+1, m-kernel_size+1).astype(np.uint8)
 
-# new_im = Image.fromarray((new_image * 255).astype(np.uint8))
+# image is already binary
+# new_image = Image.fromarray((new_image * 255).astype(np.uint8))
 
 fig = plt.figure(figsize=(20, 8))
 plt.gray()
 ax1 = fig.add_subplot(121)
 ax2 = fig.add_subplot(122)
-result1 = new_image
 ax1.imshow(img)
-ax2.imshow(result1)
+ax2.imshow(new_image)
 plt.show()

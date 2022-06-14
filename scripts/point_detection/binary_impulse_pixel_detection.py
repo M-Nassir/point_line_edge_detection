@@ -25,7 +25,6 @@ import numpy as np
 kernel_size = 3
 binary_image_flag = True
 
-
 # %%
 ############################
 #
@@ -33,9 +32,17 @@ binary_image_flag = True
 #
 ############################
 
+# %% setup
+image_save_switch = True
+
 # %% path to images
-data_path = ("/Users/nassirmohammad/projects/computer_vision/"
-             "percept_detection/point_line_edge_detection/data/")
+data_path = ("../../data/")
+
+# %%
+with open('../../paths.txt') as f:
+    image_save_path = f.readline()
+    image_save_path = image_save_path[:-1]
+    print(image_save_path)
 
 # %% write to disk for conversion
 # v2.imwrite("/Users/nassirmohammad/projects/computer_vision/point_line_edge_detection/point_line_edge_detection/data/turbine_blade_black_dot.png", img)
@@ -56,13 +63,17 @@ img[200][175] = 0
 img[75][150] = 0
 img[75][300] = 255
 
+binary_image_flag = True
+
 # show figure
-fig = plt.figure(figsize=(20, 8))
-ax1 = fig.add_subplot(111)
-ax1.imshow(img, cmap='gray')
+fig, ax = plt.subplots(figsize=(12, 8))
+ax.imshow(img, cmap='gray')
 plt.show()
 
-binary_image_flag = True
+if image_save_switch is True:
+    # save the path to where the paper figures are required
+    save_path = image_save_path + '/' + img_name
+    plt.savefig(save_path)
 
 # %% image: calc
 
@@ -78,13 +89,17 @@ img = cv2.threshold(img_original, 10, 255, cv2.THRESH_BINARY)[1]
 # ensure image is binary of values {0, 255}
 assert ((img == 0) | (img == 255)).all()
 
+binary_image_flag = True
+
 # show figure
-fig = plt.figure(figsize=(20, 8))
-ax1 = fig.add_subplot(111)
-ax1.imshow(img, cmap='gray')
+fig, ax = plt.subplots(figsize=(12, 8))
+ax.imshow(img, cmap='gray')
 plt.show()
 
-binary_image_flag = True
+if image_save_switch is True:
+    # save the path to where the paper figures are required
+    save_path = image_save_path + '/' + img_name
+    plt.savefig(save_path)
 
 # %% image: crosses
 
@@ -105,12 +120,17 @@ img[200][175] = 255
 img[75][150] = 255
 img[75][200] = 255
 
-# show figure
-fig = plt.figure(figsize=(20, 8))
-ax1 = fig.add_subplot(111)
-ax1.imshow(img, cmap='gray')
-plt.show()
 binary_image_flag = True
+
+# show figure
+fig, ax = plt.subplots(figsize=(12, 8))
+ax.imshow(img, cmap='gray')
+plt.show()
+
+if image_save_switch is True:
+    # save the path to where the paper figures are required
+    save_path = image_save_path + '/' + img_name
+    plt.savefig(save_path)
 
 # %%
 ############################
@@ -129,13 +149,13 @@ kernel = np.array([[-1, -1, -1],
                    [-1, -1, -1]], dtype="int")
 
 single_pixels = cv2.morphologyEx(input_image, cv2.MORPH_HITMISS, kernel)
-single_pixels_inv = cv2.bitwise_not(single_pixels)
-hm = cv2.bitwise_and(input_image, input_image, mask=single_pixels_inv)
+# single_pixels_inv = cv2.bitwise_not(single_pixels)
+# hm = cv2.bitwise_and(input_image, input_image, mask=single_pixels_inv)
 
 # show figure
 fig = plt.figure(figsize=(20, 8))
 ax1 = fig.add_subplot(111)
-ax1.imshow(single_pixels_inv, cmap='gray')
+ax1.imshow(single_pixels, cmap='gray')
 plt.show()
 
 # %% hit and miss transform for central black pixel only
@@ -143,18 +163,18 @@ plt.show()
 # input_image = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)[1]
 
 input_image = img
-kernel = np.array([[1, 1, 1],
+kernel = np.array([[1,  1, 1],
                    [1, -1, 1],
-                   [1, 1, 1]], dtype="int")
+                   [1,  1, 1]], dtype="int")
 
 single_pixels = cv2.morphologyEx(input_image, cv2.MORPH_HITMISS, kernel)
-single_pixels_inv = cv2.bitwise_not(single_pixels)
-hm = cv2.bitwise_and(input_image, input_image, mask=single_pixels_inv)
+# single_pixels_inv = cv2.bitwise_not(single_pixels)
+# hm = cv2.bitwise_and(input_image, input_image, mask=single_pixels_inv)
 
 # show figure
 fig = plt.figure(figsize=(20, 8))
 ax1 = fig.add_subplot(111)
-ax1.imshow(single_pixels_inv, cmap='gray')
+ax1.imshow(single_pixels, cmap='gray')
 plt.show()
 
 # %% TODO: hit or miss tranform using erosion, and erosion of complement
@@ -202,8 +222,8 @@ dst = cv2.Laplacian(img, ddepth, ksize=3)
 # converting back to uint8
 abs_dst = np.abs(dst)  # cv2.convertScaleAbs(dst)
 
-# find highest pixel value in image and take 90% of it
-threshold = int(0.9 * np.max(abs_dst))
+# find highest pixel value in image and take % of it
+threshold = int(0.99 * np.max(abs_dst))
 
 output = np.where(abs_dst > threshold, 1, 0)
 
@@ -236,7 +256,8 @@ else:
 filtered_image, filtered_response = \
     detect_isolated_points(input_image,
                            excite_num=1,
-                           inhib_sum_num=0, kernel_size=kernel_size)
+                           inhib_sum_num=0,
+                           kernel_size=kernel_size)
 
 print("Number of isolated pixels located by net is: {}"
       .format(np.sum(filtered_response)))

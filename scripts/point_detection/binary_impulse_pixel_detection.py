@@ -215,9 +215,13 @@ plt.show()
 #
 ############################
 
-# %% Apply Laplace function
-ddepth = cv2.CV_16S
-dst = cv2.Laplacian(img, ddepth, ksize=3)
+# %% Apply Laplace function (cv2.Laplacian implementation appears to be using
+# wrong kernel)
+kernel = np.array([[-1, -1, -1], [-1, 8, -1], [-1, -1, -1]])
+# ddepth = cv2.CV_16S
+dst = cv2.filter2D(img, ddepth=cv2.CV_64F, kernel=kernel)
+
+# dst = cv2.Laplacian(img, ddepth, ksize=3)
 
 # converting back to uint8
 abs_dst = np.abs(dst)  # cv2.convertScaleAbs(dst)
@@ -226,6 +230,7 @@ abs_dst = np.abs(dst)  # cv2.convertScaleAbs(dst)
 threshold = int(0.99 * np.max(abs_dst))
 
 output = np.where(abs_dst > threshold, 1, 0)
+# output = np.where(abs_dst == 2040, 1, 0)
 
 print("Number of isolated pixels located by Laplacian is: {}"
       .format(np.sum(output)))
@@ -238,6 +243,23 @@ ax1.imshow(abs_dst)
 ax2.imshow(output)
 plt.show()
 
+# %%
+# kernel =np.array([[0, 1, 0] , [1, -4, 1] , [0, 1, 0]])
+# kernel =np.array([[-2, 0, -2] , [0, 8, 0] , [-2, 0, -2]])
+# kernel =np.array([[-1, -1, -1] , [-1, 8, -1] , [-1, -1, -1]])
+
+# v = np.array([
+#     [0, 0, 0, 0, 0, 0, 0, ],
+#     [0, 0, 0, 0, 0, 0, 0, ],
+#     [0, 0, 0, 1, 0, 0, 0, ],
+#     [0, 0, 0, 0, 0, 0, 0, ],
+#     [0, 0, 0, 0, 0, 0, 0, ],
+
+# ])
+# v = v.astype(np.uint8)
+
+# dst1 = cv2.filter2D(v, ddepth=cv2.CV_64F, kernel=kernel)
+# dst1
 
 # %%
 ############################

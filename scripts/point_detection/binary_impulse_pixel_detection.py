@@ -227,7 +227,7 @@ dst = cv2.filter2D(img, ddepth=cv2.CV_64F, kernel=kernel)
 abs_dst = np.abs(dst)  # cv2.convertScaleAbs(dst)
 
 # find highest pixel value in image and take % of it
-threshold = int(0.99 * np.max(abs_dst))
+threshold = int(0.90 * np.max(abs_dst))
 
 output = np.where(abs_dst > threshold, 1, 0)
 # output = np.where(abs_dst == 2040, 1, 0)
@@ -243,7 +243,7 @@ ax1.imshow(abs_dst)
 ax2.imshow(output)
 plt.show()
 
-# %%
+# %% test code for what kernel is being applied
 # kernel =np.array([[0, 1, 0] , [1, -4, 1] , [0, 1, 0]])
 # kernel =np.array([[-2, 0, -2] , [0, 8, 0] , [-2, 0, -2]])
 # kernel =np.array([[-1, -1, -1] , [-1, 8, -1] , [-1, -1, -1]])

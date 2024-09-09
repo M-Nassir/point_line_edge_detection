@@ -68,7 +68,7 @@ image_options = [
 ]
 
 # Select the desired image by its index (0-based)
-selected_image_index = 1
+selected_image_index = 2
 
 # Get the selected image name
 img_name = image_options[selected_image_index]
@@ -209,37 +209,49 @@ ax1.imshow(single_pixels, cmap='gray')
 plt.show()
 
 # %% hit or miss transform function
-def hit_and_miss_transform(img_proc):
-    fig = plt.figure(figsize=(20, 8))
+def hit_and_miss_transform(input_img):
 
-    # Original Image
-    ax1 = fig.add_subplot(121)
-    ax1.imshow(img_proc, cmap='gray')
-    ax1.set_title('Original Image')
+    # ***** don't use np.uint8: transforms numbers to 255 and 1 ******
 
     # Hit and miss transform for central white pixel only
     kernel_white = np.array([[-1, -1, -1],
                              [-1,  1, -1],
-                             [-1, -1, -1]], dtype="int")
-    single_pixels_white = cv2.morphologyEx(img_proc, cv2.MORPH_HITMISS, kernel_white)
+                             [-1, -1, -1]], dtype='int')
+    single_pixels_white = cv2.morphologyEx(input_img, cv2.MORPH_HITMISS, kernel_white)
 
     # Hit and miss transform for central black pixel only
     kernel_black = np.array([[1,  1, 1],
                              [1, -1, 1],
-                             [1,  1, 1]], dtype="int")
-    single_pixels_black = cv2.morphologyEx(img_proc, cv2.MORPH_HITMISS, kernel_black)
+                             [1,  1, 1]], dtype='int')
+
+    single_pixels_black = cv2.morphologyEx(input_img, cv2.MORPH_HITMISS, kernel_black)
 
     # Combine white and black pixels into one image
     combined_pixels = cv2.bitwise_or(single_pixels_white, single_pixels_black)
 
+    return combined_pixels
+
+def plot_hit_and_miss_output(input_img, h_and_m_output):
+
+    fig = plt.figure(figsize=(20, 8))
+
+    # Original Image
+    ax1 = fig.add_subplot(121)
+    ax1.imshow(input_img)
+    ax1.set_title('Original Image')
+
     ax2 = fig.add_subplot(122)
-    ax2.imshow(combined_pixels, cmap='gray')
+    ax2.imshow(h_and_m_output)
     ax2.set_title('Central White and Black Pixels')
 
     plt.tight_layout()
     plt.show()
 
-hit_and_miss_transform(img_proc)
+h_and_miss_img = hit_and_miss_transform(img)
+plot_hit_and_miss_output(img, h_and_miss_img)
+
+print("Number of isolated pixels located by Laplacian is: {}"
+      .format(np.count_nonzero(h_and_miss_img)))
 
 # %%
 ############################
@@ -248,7 +260,7 @@ hit_and_miss_transform(img_proc)
 #
 ############################
 
-# %% Apply Laplace function (cv2.Laplacian implementation appears to be using
+# Apply Laplace function (cv2.Laplacian implementation appears to be using
 # wrong kernel)
 kernel = np.array([[-1, -1, -1], [-1, 8, -1], [-1, -1, -1]])
 # ddepth = cv2.CV_16S
@@ -274,6 +286,38 @@ ax1 = fig.add_subplot(121)
 ax2 = fig.add_subplot(122)
 ax1.imshow(abs_dst)
 ax2.imshow(output)
+plt.show()
+
+# %%
+############################
+#
+#   Median Filtering
+#
+############################
+
+# doesn't find isolated pixels, just smoothes, but gets rid of lines!
+
+# Define the kernel size for the median filter
+kernel_size = 3
+
+# Apply the median filter to the image
+filtered_img = cv2.medianBlur(img, kernel_size)
+
+# Threshold the filtered image to remove isolated points
+# _, thresh_img = cv2.threshold(filtered_img, 128, 255, cv2.THRESH_BINARY)
+
+# Plot the original image, filtered image, and thresholded image
+fig, axs = plt.subplots(1, 2, figsize=(18, 10))
+
+axs[0].imshow(img, cmap='gray')
+axs[0].set_title('Original Image')
+
+axs[1].imshow(filtered_img, cmap='gray')
+axs[1].set_title('Filtered Image (Median Blur)')
+
+# axs[2].imshow(thresh_img, cmap='gray')
+# axs[2].set_title('Thresholded Image')
+
 plt.show()
 
 # %% test code for what kernel is being applied

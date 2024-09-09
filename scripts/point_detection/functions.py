@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 
+import sys
+sys.path.append('../')
+
 import numpy as np
-from perception import Perception
-from scripts.utils import get_rolling_windows
+from perception_nassir import Perception
+from utils import get_rolling_windows
 
 
 def get_response_isolation(data,
@@ -11,7 +14,7 @@ def get_response_isolation(data,
                            kernel_size=3):
 
     data = data.astype(int)
-    assert np.max(data) <= 255
+    assert np.max(data) <= 65535  # 255
     assert np.min(data) >= 0
 
     trigger = None
@@ -20,6 +23,11 @@ def get_response_isolation(data,
 
     clf = Perception()
     clf.fit_predict(data)
+
+    # clf2 = Perception()
+    # clf2.fit_predict(clf.scores_)
+    # clf.labels_ = clf2.labels_
+
     labels = clf.labels_
 
     # ----------------------
@@ -117,5 +125,30 @@ def detect_isolated_points(img, excite_num=1, inhib_sum_num=0, kernel_size=3):
             #     default_response.reshape(kernel_size, kernel_size))
 
             filter_response.append(0)
+
+    return filtered_image, filter_response
+
+def detect_isolated_points_fast(img, excite_num=1, inhib_sum_num=0, kernel_size=3):
+    windows = get_rolling_windows(img, kernel_size=kernel_size, stride_length=1)
+    num_windows = len(windows)
+
+    # Pre-allocate arrays
+    filter_response = np.zeros(num_windows)
+    filtered_image = np.zeros(num_windows)
+
+    for i, w in enumerate(windows):
+        data = w.flatten().astype(int)
+
+        idx_inhib = np.array([0, 1, 2, 3, 5, 6, 7, 8])
+        idx_excite = np.array([4])
+
+        c, fired_correctly, pixel_median = get_response_isolation(data, idx_inhib, idx_excite,
+                                                                 inhib_sum_num=inhib_sum_num,
+                                                                 excite_num=excite_num,
+                                                                 kernel_size=kernel_size)
+
+        # Use boolean array to set values
+        filter_response[i] = int(fired_correctly)
+        filtered_image[i] = pixel_median if fired_correctly else data[4]
 
     return filtered_image, filter_response

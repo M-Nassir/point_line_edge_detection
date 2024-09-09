@@ -241,38 +241,6 @@ def hit_and_miss_transform(img_proc):
 
 hit_and_miss_transform(img_proc)
 
-
-# %% TODO: hit or miss tranform using erosion, and erosion of complement
-
-# load image, ensure binary, remove bar on the left
-# input_image = cv2.imread('calc.png', 0)
-# input_image = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)[1]
-
-# # --- erode with kernel and complement
-# input_image = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)[1]
-# input_image_comp = cv2.bitwise_not(input_image)  # could just use 255-img
-
-# kernel1 = np.array([[0, 0, 0],
-#                     [0, 1, 0],
-#                     [0, 0, 0]], np.uint8)
-
-# # kernel = np.ones((3, 3), np.uint8)
-
-# kernel2 = np.array([[1, 1, 1],
-#                     [1, 0, 1],
-#                     [1, 1, 1]], np.uint8)
-
-# hitormiss1 = cv2.morphologyEx(input_image, cv2.MORPH_ERODE, kernel1)
-# hitormiss2 = cv2.morphologyEx(input_image_comp, cv2.MORPH_ERODE, kernel2)
-# hitormiss = cv2.bitwise_and(hitormiss1, hitormiss2)
-
-# hm = cv2.erode(img, kernel1)
-
-# fig = plt.figure(figsize=(20, 8))
-# ax1 = fig.add_subplot(111)
-# ax1.imshow(output, cmap='gray')
-# plt.show()
-
 # %%
 ############################
 #

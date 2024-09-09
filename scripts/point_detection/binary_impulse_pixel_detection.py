@@ -24,6 +24,23 @@ import numpy as np
 # %% set parameters
 kernel_size = 3
 binary_image_flag = True
+image_save_switch = False
+
+# %%
+############################
+#
+#     Functions
+#
+############################
+def show_plt_image(img):
+    # fig, ax = plt.subplots(figsize=(12, 8))
+    # ax.imshow(img, cmap='gray')
+    # plt.show()
+
+    if img is not None:
+        plt.imshow(img, cmap='gray')
+    plt.axis('off')  # Turn off axis
+    plt.show()
 
 # %%
 ############################
@@ -32,102 +49,82 @@ binary_image_flag = True
 #
 ############################
 
-# %% setup
-image_save_switch = True
-
 # %% path to images
 data_path = ("../../data/")
+file_with_paths = '../../paths.txt'
 
-# %%
-with open('../../paths.txt') as f:
+# %% get path to save images
+with open(file_with_paths) as f:
     image_save_path = f.readline()
     image_save_path = image_save_path[:-1]
     print(image_save_path)
 
-# %% write to disk for conversion
-# v2.imwrite("/Users/nassirmohammad/projects/computer_vision/point_line_edge_detection/point_line_edge_detection/data/turbine_blade_black_dot.png", img)
+# %% read selected image
 
-# %% image: circles
+image_options = [
+    "circles_matlab.png",  # 0
+    "calc.png",            # 1
+    "crosses.png"          # 2
+]
 
-# read the image
-img_name = "circles_matlab.png"
-img1 = data_path + img_name
-im = Image.open(img1).convert('L')
-img = np.array(im)  # array([  0, 255], dtype=uint8)
+# Select the desired image by its index (0-based)
+selected_image_index = 1
 
-# ensure image is binary of values {0, 255}
-assert ((img == 0) | (img == 255)).all()
+# Get the selected image name
+img_name = image_options[selected_image_index]
 
-# add the isolated pixels
-img[200][175] = 0
-img[75][150] = 0
-img[75][300] = 255
+img_raw = data_path + img_name
+im_converted = Image.open(img_raw).convert('L')
+img_proc = np.array(im_converted)  # array([  0, 255], dtype=uint8)
 
-binary_image_flag = True
+if img_name == 'circles_matlab.png':
 
-# show figure
-fig, ax = plt.subplots(figsize=(12, 8))
-ax.imshow(img, cmap='gray')
-plt.show()
+    img = img_proc
 
-if image_save_switch is True:
-    # save the path to where the paper figures are required
-    save_path = image_save_path + '/' + img_name
-    plt.savefig(save_path)
+    # ensure image is binary of values {0, 255}
+    assert ((img == 0) | (img == 255)).all()
 
-# %% image: calc
+    # add the isolated pixels
+    img[200][175] = 0
+    img[75][150] = 0
+    img[75][300] = 255
 
-# read the image
-img_name = "calc.png"  # (already has isolated pixels)
-img1 = data_path + img_name
-im = Image.open(img1).convert('L')
-img_original = np.array(im)  # array([  0, 109, 128, 255], dtype=uint8)
+    binary_image_flag = True
+    show_plt_image(img)
 
-# binarize the image
-img = cv2.threshold(img_original, 10, 255, cv2.THRESH_BINARY)[1]
+elif img_name == 'calc.png':
 
-# ensure image is binary of values {0, 255}
-assert ((img == 0) | (img == 255)).all()
+    # binarize the image
+    img = cv2.threshold(img_proc, 10, 255, cv2.THRESH_BINARY)[1]
 
-binary_image_flag = True
+    # ensure image is binary of values {0, 255}
+    assert ((img == 0) | (img == 255)).all()
 
-# show figure
-fig, ax = plt.subplots(figsize=(12, 8))
-ax.imshow(img, cmap='gray')
-plt.show()
+    binary_image_flag = True
+    show_plt_image(img)
 
-if image_save_switch is True:
-    # save the path to where the paper figures are required
-    save_path = image_save_path + '/' + img_name
-    plt.savefig(save_path)
+elif img_name == 'crosses.png':
 
-# %% image: crosses
+    # binarize the image
+    img = cv2.threshold(img_proc, 20, 255, cv2.THRESH_BINARY)[1]
 
-# read the image
-img_name = "crosses.png"
-img1 = data_path + img_name
-im = Image.open(img1).convert('L')
-img_original = np.array(im)  # array([ 20, 235], dtype=uint8)
+    # ensure image is binary of values {0, 255}
+    assert ((img == 0) | (img == 255)).all()
 
-# binarize the image
-img = cv2.threshold(img_original, 20, 255, cv2.THRESH_BINARY)[1]
+    # add the isolated pixels
+    img[200][175] = 255
+    img[75][150] = 255
+    img[75][200] = 255
 
-# ensure image is binary of values {0, 255}
-assert ((img == 0) | (img == 255)).all()
+    binary_image_flag = True
 
-# add the isolated pixels
-img[200][175] = 255
-img[75][150] = 255
-img[75][200] = 255
+    show_plt_image(img)
 
-binary_image_flag = True
-
-# show figure
-fig, ax = plt.subplots(figsize=(12, 8))
-ax.imshow(img, cmap='gray')
-plt.show()
+else:
+    raise Exception('Image name not defined, var: img_name')
 
 if image_save_switch is True:
+
     # save the path to where the paper figures are required
     save_path = image_save_path + '/' + img_name
     plt.savefig(save_path)
@@ -139,11 +136,45 @@ if image_save_switch is True:
 #
 ############################
 
+# %% test
+test_input = np.array([[0, 255, 0],
+                       [0, 0, 0],
+                       [0, 255, 0]], dtype=np.uint8)
+
+test_kernel = np.array([[0, 1, 0],
+                        [0,  0,  0],
+                        [0, 1, 0]], dtype=np.uint8)
+
+# test_input = np.array((
+#     [0, 0, 0, 0, 0, 0, 0, 0],
+#     [0, 255, 255, 255, 0, 0, 0, 255],
+#     [0, 255, 255, 255, 0, 0, 0, 0],
+#     [0, 255, 255, 255, 0, 255, 0, 0],
+#     [0, 0, 255, 0, 0, 0, 0, 0],
+#     [0, 0, 255, 0, 0, 255, 255, 0],
+#     [0,255, 0, 255, 0, 0, 255, 0],
+#     [0, 255, 255, 255, 0, 0, 0, 0]), dtype="uint8")
+
+# test_kernel = np.array((
+#         [0, 1, -1],
+#         [1, -1, -1],
+#         [0, 1, 0]), dtype="int")
+
+# test_kernel = np.array((
+#         [-1, -1, -1],
+#         [-1, 1, -1],
+#         [-1, -1, -1]), dtype="int")
+
+cv2.morphologyEx(test_input,
+                 cv2.MORPH_HITMISS,
+                 np.asarray(test_kernel))
+
+
 # %% hit and miss transform for central white pixel only
 
 # input_image = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)[1]
 
-input_image = img
+input_image = img_proc
 kernel = np.array([[-1, -1, -1],
                    [-1,  1, -1],
                    [-1, -1, -1]], dtype="int")
@@ -176,6 +207,40 @@ fig = plt.figure(figsize=(20, 8))
 ax1 = fig.add_subplot(111)
 ax1.imshow(single_pixels, cmap='gray')
 plt.show()
+
+# %% hit or miss transform function
+def hit_and_miss_transform(img_proc):
+    fig = plt.figure(figsize=(20, 8))
+
+    # Original Image
+    ax1 = fig.add_subplot(121)
+    ax1.imshow(img_proc, cmap='gray')
+    ax1.set_title('Original Image')
+
+    # Hit and miss transform for central white pixel only
+    kernel_white = np.array([[-1, -1, -1],
+                             [-1,  1, -1],
+                             [-1, -1, -1]], dtype="int")
+    single_pixels_white = cv2.morphologyEx(img_proc, cv2.MORPH_HITMISS, kernel_white)
+
+    # Hit and miss transform for central black pixel only
+    kernel_black = np.array([[1,  1, 1],
+                             [1, -1, 1],
+                             [1,  1, 1]], dtype="int")
+    single_pixels_black = cv2.morphologyEx(img_proc, cv2.MORPH_HITMISS, kernel_black)
+
+    # Combine white and black pixels into one image
+    combined_pixels = cv2.bitwise_or(single_pixels_white, single_pixels_black)
+
+    ax2 = fig.add_subplot(122)
+    ax2.imshow(combined_pixels, cmap='gray')
+    ax2.set_title('Central White and Black Pixels')
+
+    plt.tight_layout()
+    plt.show()
+
+hit_and_miss_transform(img_proc)
+
 
 # %% TODO: hit or miss tranform using erosion, and erosion of complement
 

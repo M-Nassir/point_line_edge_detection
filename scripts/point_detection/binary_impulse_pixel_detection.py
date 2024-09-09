@@ -15,7 +15,7 @@ Isolated pixel detection - a highly specialised application.
 ############################
 
 # %% import image handling
-from point_detection.functions import detect_isolated_points
+from point_detection.functions import detect_isolated_points, detect_isolated_points_fast
 import cv2
 from matplotlib import pyplot as plt
 from PIL import Image
@@ -339,61 +339,48 @@ plt.show()
 # dst1
 
 # %%
-############################
+################################
 #
-#       Neural Network
+#       Neural Network Model
 #
-############################
+################################
 
 # %% detect isolated pixels using neural network
-if binary_image_flag is True:
-    input_image = img
-else:
-    # blur the image, often said to be a process in vision before derivatives
-    input_image = cv2.GaussianBlur(img, (3, 3), 0)
+import time
 
-filtered_image, filtered_response = \
-    detect_isolated_points(input_image,
-                           excite_num=1,
-                           inhib_sum_num=0,
-                           kernel_size=kernel_size)
+start_time = time.time()
+filtered_image, filtered_response = detect_isolated_points(
+    img, excite_num=1, inhib_sum_num=0, kernel_size=kernel_size
+)
+end_time = time.time()
 
-print("Number of isolated pixels located by net is: {}"
-      .format(np.sum(filtered_response)))
+execution_time = end_time - start_time
+print(f"Execution time: {execution_time:.4f} seconds")
 
-# %% show only anomaly response pixels
-n = img.shape[0]
-m = img.shape[1]
+# Print the number of isolated pixels
+print("Number of isolated pixels located by net is: {}".format(np.count_nonzero(filtered_response)))
 
-new_image = np.array(filtered_response)
-new_image = new_image.reshape(n-kernel_size+1, m-kernel_size+1)
+# Function to display image with original image
+def display_image(image, title):
+    n = img.shape[0]
+    m = img.shape[1]
+    new_image = np.array(image)
+    new_image = new_image.reshape(n - kernel_size + 1, m - kernel_size + 1)
 
-# map the [0,1] image to [0,255]
-new_image = Image.fromarray((new_image * 255).astype(np.uint8))
+    if new_image.dtype != np.uint8:
+        new_image = Image.fromarray((new_image * 255).astype(np.uint8))
 
-fig = plt.figure(figsize=(20, 8))
-plt.gray()
-ax1 = fig.add_subplot(121)
-ax2 = fig.add_subplot(122)
-ax1.imshow(img)
-ax2.imshow(new_image)
-plt.show()
+    fig = plt.figure(figsize=(20, 8))
+    plt.gray()
+    ax1 = fig.add_subplot(121)
+    ax2 = fig.add_subplot(122)
+    ax1.imshow(img)
+    ax2.imshow(new_image)
+    ax2.set_title(title)
+    plt.show()
 
-# %% show filtered image
-n = img.shape[0]
-m = img.shape[1]
+# Display anomaly response pixels
+display_image(filtered_response, "Anomaly Response Pixels")
 
-new_image = np.array(filtered_image)
-new_image = \
-    new_image.reshape(n-kernel_size+1, m-kernel_size+1).astype(np.uint8)
-
-# image is already binary
-# new_image = Image.fromarray((new_image * 255).astype(np.uint8))
-
-fig = plt.figure(figsize=(20, 8))
-plt.gray()
-ax1 = fig.add_subplot(121)
-ax2 = fig.add_subplot(122)
-ax1.imshow(img)
-ax2.imshow(new_image)
-plt.show()
+# Display filtered image
+display_image(filtered_image, "Filtered Image")

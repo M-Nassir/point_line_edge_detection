@@ -6,7 +6,8 @@ sys.path.append('../')
 import numpy as np
 from perception_nassir import Perception
 from utils import get_rolling_windows
-
+from matplotlib import pyplot as plt
+from PIL import Image
 
 def get_response_isolation(data,
                            idx_inhib, idx_excite,
@@ -128,27 +129,21 @@ def detect_isolated_points(img, excite_num=1, inhib_sum_num=0, kernel_size=3):
 
     return filtered_image, filter_response
 
-def detect_isolated_points_fast(img, excite_num=1, inhib_sum_num=0, kernel_size=3):
-    windows = get_rolling_windows(img, kernel_size=kernel_size, stride_length=1)
-    num_windows = len(windows)
+# Function to display image with original image
+def display_image_plus_responses(img, filtered_img, title, kernel_size):
+    n = img.shape[0]
+    m = img.shape[1]
+    new_image = np.array(filtered_img)
+    new_image = new_image.reshape(n - kernel_size + 1, m - kernel_size + 1)
 
-    # Pre-allocate arrays
-    filter_response = np.zeros(num_windows)
-    filtered_image = np.zeros(num_windows)
+    if new_image.dtype != np.uint8:
+        new_image = Image.fromarray((new_image * 255).astype(np.uint8))
 
-    for i, w in enumerate(windows):
-        data = w.flatten().astype(int)
-
-        idx_inhib = np.array([0, 1, 2, 3, 5, 6, 7, 8])
-        idx_excite = np.array([4])
-
-        c, fired_correctly, pixel_median = get_response_isolation(data, idx_inhib, idx_excite,
-                                                                 inhib_sum_num=inhib_sum_num,
-                                                                 excite_num=excite_num,
-                                                                 kernel_size=kernel_size)
-
-        # Use boolean array to set values
-        filter_response[i] = int(fired_correctly)
-        filtered_image[i] = pixel_median if fired_correctly else data[4]
-
-    return filtered_image, filter_response
+    fig = plt.figure(figsize=(20, 8))
+    plt.gray()
+    ax1 = fig.add_subplot(121)
+    ax2 = fig.add_subplot(122)
+    ax1.imshow(img)
+    ax2.imshow(new_image)
+    ax2.set_title(title)
+    plt.show()

@@ -15,11 +15,12 @@ Isolated pixel detection - a highly specialised application.
 ############################
 
 # %% import image handling
-from point_detection.functions import detect_isolated_points, detect_isolated_points_fast
+from point_detection.functions import detect_isolated_points, display_image_plus_responses
 import cv2
 from matplotlib import pyplot as plt
 from PIL import Image
 import numpy as np
+import time
 
 # %% set parameters
 kernel_size = 3
@@ -234,7 +235,7 @@ def hit_and_miss_transform(input_img):
 def plot_hit_and_miss_output(input_img, h_and_m_output):
 
     fig = plt.figure(figsize=(20, 8))
-
+    plt.gray()
     # Original Image
     ax1 = fig.add_subplot(121)
     ax1.imshow(input_img)
@@ -258,7 +259,7 @@ print("Number of isolated pixels located by Laplacian is: {}"
 #
 #   Image Derivatives
 #
-############################
+############################§
 
 # Apply Laplace function (cv2.Laplacian implementation appears to be using
 # wrong kernel)
@@ -346,7 +347,6 @@ plt.show()
 ################################
 
 # %% detect isolated pixels using neural network
-import time
 
 start_time = time.time()
 filtered_image, filtered_response = detect_isolated_points(
@@ -360,27 +360,8 @@ print(f"Execution time: {execution_time:.4f} seconds")
 # Print the number of isolated pixels
 print("Number of isolated pixels located by net is: {}".format(np.count_nonzero(filtered_response)))
 
-# Function to display image with original image
-def display_image(image, title):
-    n = img.shape[0]
-    m = img.shape[1]
-    new_image = np.array(image)
-    new_image = new_image.reshape(n - kernel_size + 1, m - kernel_size + 1)
-
-    if new_image.dtype != np.uint8:
-        new_image = Image.fromarray((new_image * 255).astype(np.uint8))
-
-    fig = plt.figure(figsize=(20, 8))
-    plt.gray()
-    ax1 = fig.add_subplot(121)
-    ax2 = fig.add_subplot(122)
-    ax1.imshow(img)
-    ax2.imshow(new_image)
-    ax2.set_title(title)
-    plt.show()
-
 # Display anomaly response pixels
-display_image(filtered_response, "Anomaly Response Pixels")
+display_image_plus_responses(img, filtered_response, "Anomaly Response Pixels", kernel_size)
 
 # Display filtered image
-display_image(filtered_image, "Filtered Image")
+display_image_plus_responses(img, filtered_image, "Filtered Image", kernel_size)

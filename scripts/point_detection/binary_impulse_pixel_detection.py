@@ -4,6 +4,17 @@
 Created on Mon Mar 21 11:42:05 2022.
 Isolated pixel detection - a highly specialised application.
 @author: Nassir Mohammad
+
+This script operates the hit or miss transform, derivatives, (median filtering),
+and perception neuron isolpix detection method on three binary images.
+
+1. is simply areas of black or white with isolated pixels
+2. is a realworld calculator image with task of removing isolated white pixels.
+3. is an image with one pixel thick and thicker lines to demonstrate that it
+works amongst line segments.
+
+We have reliable isolated pixel detection with hit or miss transform since it
+is a template matching algorithm, and with the perception neuron method.
 """
 
 # put imshow into function in utilties
@@ -27,7 +38,7 @@ kernel_size = 3
 binary_image_flag = True
 image_save_switch = False
 
-# %%
+# %% Functions
 ############################
 #
 #     Functions
@@ -43,7 +54,7 @@ def show_plt_image(img):
     plt.axis('off')  # Turn off axis
     plt.show()
 
-# %%
+# %% Read images
 ############################
 #
 #       Read Images
@@ -130,7 +141,7 @@ if image_save_switch is True:
     save_path = image_save_path + '/' + img_name
     plt.savefig(save_path)
 
-# %%
+# %% Template Matching
 ############################
 #
 #   Template Matching

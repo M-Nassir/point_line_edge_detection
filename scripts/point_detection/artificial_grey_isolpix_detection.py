@@ -4,6 +4,15 @@
 Created on Mon May 23 04:23:05 2022.
 Isolated pixel detection - a highly specialised application.
 @author: Nassir Mohammad
+
+This script is written to experiment with isolated pixel detection in smooth
+segments of grey level images with different shades and isolated pixels added
+of varying intensities between [0,255]. Template matching fails here since
+there are too many possiblities to check efficiently. Derivative filtering can
+work to detect some isolated pixels, but fails elsewhere. Furthermore, it
+requires the user to select a threshold parameter which restricts automation
+and requires more manual human intervention. Otsu method is tested for
+automatically finding the best threshold, but its results are unsatisfactory.
 """
 
 # %%
@@ -46,12 +55,12 @@ file_with_paths = '../../paths.txt'
 # %% specify the greyscale images to input
 image_options = [
     "square_shades.png",                # 0
-    # "camera_man.png",                   # 1 real world image
-    # "turbine_blade_black_dot.png"       # 2 real world image
+    "camera_man.png",                   # 1 real world image
+    "turbine_blade_black_dot.png"       # 2 real world image
 ]
 
 # Select the desired image by its index (0-based)
-selected_image_index = 0
+selected_image_index = 2
 
 # Get the selected image name
 img_name = image_options[selected_image_index]
@@ -82,8 +91,7 @@ elif img_name =='turbine_blade_black_dot.png':
     im = Image.open(img1).convert('L')
     img = np.array(im)
 
-    # as the image is not natural and not noisy, use binary detection
-    binary_image_flag = True
+    binary_image_flag = False
 
 # show figure
 fig = plt.figure(figsize=(20, 8))
@@ -109,13 +117,13 @@ plt.show()
 #
 ############################
 
-# %% detect isolated pixels using neural network
+# detect isolated pixels using neural network
 if binary_image_flag is True:
     input_image = img
     print('using input image without blurring')
 else:
     # blur the image, often said to be a process in vision before derivatives
-    input_image = cv2.GaussianBlur(img, (3, 3), 0)
+    input_image = cv2.GaussianBlur(img, (5, 5), 0)
     print('filtered image with gaussian blur')
 
 start_time = time.time()

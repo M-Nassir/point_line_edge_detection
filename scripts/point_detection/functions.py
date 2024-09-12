@@ -71,19 +71,64 @@ def get_response_isolation(data,
     return c, trigger, pixel_median
 
 
+# Function to display image with original image
+def display_image_plus_responses(img, filter_resp_array, title, kernel_size):
+    n = img.shape[0]
+    m = img.shape[1]
+
+    # create the image from the filter response array
+    new_image = np.array(filter_resp_array)
+    new_image = new_image.reshape(n - kernel_size + 1, m - kernel_size + 1)
+
+    # if new_image.dtype != np.uint8:
+    #     new_image = Image.fromarray((new_image * 255).astype(np.uint8))
+
+    fig = plt.figure(figsize=(20, 8))
+    plt.gray()
+    ax1 = fig.add_subplot(121)
+    ax2 = fig.add_subplot(122)
+    ax1.imshow(img)
+    ax2.imshow(new_image)
+    ax2.set_title(title)
+    plt.show()
+
+
+
 def detect_isolated_points(img, excite_num=1, inhib_sum_num=0, kernel_size=3):
+    """
+    Detects isolated points in an image using a neural network-inspired approach.
 
-    # holder for filter_response
-    filter_response = []
+    Parameters:
+    img (numpy array): The input image.
+    excite_num (int, optional): The number of excitatory neurons required to fire. Defaults to 1.
+    inhib_sum_num (int, optional): The sum of inhibitory neurons required to fire. Defaults to 0.
+    kernel_size (int, optional): The size of the kernel used for the rolling window. Defaults to 3.
 
-    # holder for filtered image
-    filtered_image = []
+    Returns:
+    tuple: A tuple containing the filtered image and the filter response.
+
+    Notes:
+    This function uses a rolling window approach to scan the image and detect isolated points.
+    The detection is based on a neural network-inspired approach.
+    The function returns two outputs: the filtered image, where isolated points are replaced with the median value,
+    and the filter response, which is an image showing where the filter has fired.
+    """
 
     # get image windows
     windows = get_rolling_windows(img,
-                                  kernel_size=kernel_size, stride_length=1)
+                                  kernel_size=kernel_size,
+                                  stride_length=1)
 
-    for w in windows:
+    # holder for filtered image: replaces pixel that fires with the median
+    filtered_image_arr = np.zeros(len(windows), dtype=int)
+
+    # boolean holder for filter_response; shows where filter fired
+    filter_response_map_arr = np.zeros(len(windows), dtype=int)
+
+    # convert list to NumPy array
+    windows_array = np.array(windows)
+
+    for i, w in enumerate(windows_array):
 
         # flatten the data to 1D array, ensure all values are ints in range
         data = w.flatten().astype(int)
@@ -98,6 +143,7 @@ def detect_isolated_points(img, excite_num=1, inhib_sum_num=0, kernel_size=3):
         idx_inhib = [0, 1, 2, 3, 5, 6, 7, 8]
         idx_excite = [4]
 
+        # get the neuron response for the kernel_size area
         c, fired_correctly, pixel_median =\
             get_response_isolation(data, idx_inhib, idx_excite,
                                    inhib_sum_num=inhib_sum_num,
@@ -109,41 +155,23 @@ def detect_isolated_points(img, excite_num=1, inhib_sum_num=0, kernel_size=3):
 
             # replace the pixel value in original image with the median
             # (we make new filtered image)
-            filtered_image.append(pixel_median)
+            filtered_image_arr[i] = pixel_median
 
             # we get image of where the isolation detector has fired
             # (we get isolation pixels image)
             # filter_response.append(c.reshape(kernel_size, kernel_size))
-            filter_response.append(1)
+            filter_response_map_arr[i] = 1
 
         else:
+
             # keep original pixel in new filtered image
-            filtered_image.append(data[4])
+            filtered_image_arr[i] = data[4]
 
             # give filter_response zero kernel sized patch
             # default_response = np.zeros(kernel_size**2)
             # filter_response.append(
             #     default_response.reshape(kernel_size, kernel_size))
 
-            filter_response.append(0)
+            filter_response_map_arr[i] = 0
 
-    return filtered_image, filter_response
-
-# Function to display image with original image
-def display_image_plus_responses(img, filtered_img, title, kernel_size):
-    n = img.shape[0]
-    m = img.shape[1]
-    new_image = np.array(filtered_img)
-    new_image = new_image.reshape(n - kernel_size + 1, m - kernel_size + 1)
-
-    if new_image.dtype != np.uint8:
-        new_image = Image.fromarray((new_image * 255).astype(np.uint8))
-
-    fig = plt.figure(figsize=(20, 8))
-    plt.gray()
-    ax1 = fig.add_subplot(121)
-    ax2 = fig.add_subplot(122)
-    ax1.imshow(img)
-    ax2.imshow(new_image)
-    ax2.set_title(title)
-    plt.show()
+    return filtered_image_arr, filter_response_map_arr

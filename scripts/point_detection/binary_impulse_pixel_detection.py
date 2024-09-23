@@ -26,7 +26,10 @@ is a template matching algorithm, and with the perception neuron method.
 ############################
 
 # %% import image handling
-from point_detection.functions import detect_isolated_points, display_image_plus_responses
+from point_detection.functions import detect_isolated_points
+from point_detection.functions import display_image_plus_responses
+from point_detection.functions import show_plt_images
+
 import cv2
 from matplotlib import pyplot as plt
 from PIL import Image
@@ -36,8 +39,8 @@ from pathlib import Path
 
 # %% set parameters
 kernel_size = 3
-binary_image_flag = True
-image_save_switch = False
+BINARY_IMAGE_FLAG = True
+IMAGE_SAVE_SWITCH = False
 
 # %% Functions
 ############################
@@ -45,31 +48,6 @@ image_save_switch = False
 #     Functions
 #
 ############################
-def show_plt_image(img1, img1_title, img2=None, img2_title=None):
-    fig = plt.figure(figsize=(20, 8))
-    plt.gray()
-
-    if img2 is not None:
-        # Display two images
-        ax1 = fig.add_subplot(121)
-        ax2 = fig.add_subplot(122)
-
-        ax1.imshow(img1)
-        ax1.set_title(img1_title)
-        ax1.axis('off')  # Turn off axis
-
-        ax2.imshow(img2)
-        ax2.set_title(img2_title if img2_title else 'Image 2')
-        ax2.axis('off')  # Turn off axis
-    else:
-        # Display only one image
-        ax1 = fig.add_subplot(111)
-
-        ax1.imshow(img1)
-        ax1.set_title(img1_title)
-        ax1.axis('off')  # Turn off axis
-
-    plt.show()
 
 
 # %% Read images
@@ -82,9 +60,9 @@ def show_plt_image(img1, img1_title, img2=None, img2_title=None):
 # %% path to images
 # data_path = ("../../data/")
 # file_with_paths = '../../paths.txt'
-p1 = '/Users/nassirmohammad/projects/computer_vision/percept_detection/point_line_edge_detection'
-data_path = p1 + '/data/'
-file_with_paths = p1 + '/paths.txt'
+path = Path("../../")
+data_path = path / 'data/'
+file_with_paths = path / 'paths.txt'
 
 
 # %% get path to save images
@@ -94,7 +72,6 @@ with open(file_with_paths) as f:
     print(image_save_path)
 
 # %% read selected image
-
 image_options = [
     "circles_matlab.png",  # 0
     "calc.png",            # 1
@@ -107,7 +84,7 @@ selected_image_index = 0
 # Get the selected image name
 img_name = image_options[selected_image_index]
 
-img_raw = data_path + img_name
+img_raw = data_path / img_name
 im_converted = Image.open(img_raw).convert('L')
 img_proc = np.array(im_converted)  # array([  0, 255], dtype=uint8)
 
@@ -128,7 +105,7 @@ if img_name == 'circles_matlab.png':
     img[180][150] = 0
 
     binary_image_flag = True
-    show_plt_image(img, 'Original image with isolated pixels')
+    show_plt_images(img, 'Original image with isolated pixels')
 
 elif img_name == 'calc.png':
 
@@ -139,7 +116,7 @@ elif img_name == 'calc.png':
     assert ((img == 0) | (img == 255)).all()
 
     binary_image_flag = True
-    show_plt_image(img,  'Original image with isolated pixels')
+    show_plt_images(img,  'Original image with isolated pixels')
 
 elif img_name == 'crosses.png':
 
@@ -156,12 +133,12 @@ elif img_name == 'crosses.png':
 
     binary_image_flag = True
 
-    show_plt_image(img,  'Original image with isolated pixels')
+    show_plt_images(img,  'Original image with isolated pixels')
 
 else:
     raise Exception('Image name not defined, var: img_name')
 
-if image_save_switch is True:
+if IMAGE_SAVE_SWITCH is True:
 
     image_to_write = Image.fromarray(img).convert('L')
 
@@ -293,7 +270,7 @@ plot_hit_and_miss_output(img, h_and_miss_img)
 print("Number of isolated pixels located by Laplacian is: {}"
       .format(np.count_nonzero(h_and_miss_img)))
 
-if image_save_switch is True:
+if IMAGE_SAVE_SWITCH is True:
 
     image_to_write = Image.fromarray(h_and_miss_img).convert('L')
 
@@ -405,9 +382,10 @@ execution_time = end_time - start_time
 print(f"Execution time: {execution_time:.4f} seconds")
 
 # Print the number of isolated pixels
-print("Number of isolated pixels located by net is: {}".format(np.count_nonzero(filter_response)))
+print("Number of isolated pixels located by net is: {}".
+      format(np.count_nonzero(filter_response)))
 
-show_plt_image(img, 'Original image', filtered_image, "Filtered image")
-show_plt_image(img, 'Original image', filter_response, "Anomaly Response Pixels")
+show_plt_images(img, 'Original image', filtered_image, "Filtered image")
+show_plt_images(img, 'Original image', filter_response, "Anomaly Response Pixels")
 
 # %%

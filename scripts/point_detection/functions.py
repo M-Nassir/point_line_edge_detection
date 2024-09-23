@@ -70,6 +70,32 @@ def get_response_isolation(data,
 
     return c, trigger, pixel_median
 
+def show_plt_images(img1, img1_title, img2=None, img2_title=None):
+    fig = plt.figure(figsize=(20, 8))
+    plt.gray()
+
+    if img2 is not None:
+        # Display two images
+        ax1 = fig.add_subplot(121)
+        ax2 = fig.add_subplot(122)
+
+        ax1.imshow(img1)
+        ax1.set_title(img1_title)
+        ax1.axis('off')  # Turn off axis
+
+        ax2.imshow(img2)
+        ax2.set_title(img2_title if img2_title else 'Image 2')
+        ax2.axis('off')  # Turn off axis
+    else:
+        # Display only one image
+        ax1 = fig.add_subplot(111)
+
+        ax1.imshow(img1)
+        ax1.set_title(img1_title)
+        ax1.axis('off')  # Turn off axis
+
+    plt.show()
+
 
 # Function to display image with original image
 def display_image_plus_responses(img, img2, title):

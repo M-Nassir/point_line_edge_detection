@@ -32,6 +32,7 @@ from matplotlib import pyplot as plt
 from PIL import Image
 import numpy as np
 import time
+from pathlib import Path
 
 # %% set parameters
 kernel_size = 3
@@ -44,15 +45,32 @@ image_save_switch = False
 #     Functions
 #
 ############################
-def show_plt_image(img):
-    # fig, ax = plt.subplots(figsize=(12, 8))
-    # ax.imshow(img, cmap='gray')
-    # plt.show()
+def show_plt_image(img1, img1_title, img2=None, img2_title=None):
+    fig = plt.figure(figsize=(20, 8))
+    plt.gray()
 
-    if img is not None:
-        plt.imshow(img, cmap='gray')
-    plt.axis('off')  # Turn off axis
+    if img2 is not None:
+        # Display two images
+        ax1 = fig.add_subplot(121)
+        ax2 = fig.add_subplot(122)
+
+        ax1.imshow(img1)
+        ax1.set_title(img1_title)
+        ax1.axis('off')  # Turn off axis
+
+        ax2.imshow(img2)
+        ax2.set_title(img2_title if img2_title else 'Image 2')
+        ax2.axis('off')  # Turn off axis
+    else:
+        # Display only one image
+        ax1 = fig.add_subplot(111)
+
+        ax1.imshow(img1)
+        ax1.set_title(img1_title)
+        ax1.axis('off')  # Turn off axis
+
     plt.show()
+
 
 # %% Read images
 ############################
@@ -62,8 +80,12 @@ def show_plt_image(img):
 ############################
 
 # %% path to images
-data_path = ("../../data/")
-file_with_paths = '../../paths.txt'
+# data_path = ("../../data/")
+# file_with_paths = '../../paths.txt'
+p1 = '/Users/nassirmohammad/projects/computer_vision/percept_detection/point_line_edge_detection'
+data_path = p1 + '/data/'
+file_with_paths = p1 + '/paths.txt'
+
 
 # %% get path to save images
 with open(file_with_paths) as f:
@@ -80,7 +102,7 @@ image_options = [
 ]
 
 # Select the desired image by its index (0-based)
-selected_image_index = 2
+selected_image_index = 0
 
 # Get the selected image name
 img_name = image_options[selected_image_index]
@@ -96,13 +118,17 @@ if img_name == 'circles_matlab.png':
     # ensure image is binary of values {0, 255}
     assert ((img == 0) | (img == 255)).all()
 
+    img = img[45:280, 100:300]
+
     # add the isolated pixels
-    img[200][175] = 0
-    img[75][150] = 0
-    img[75][300] = 255
+    img[25][25] = 0
+    img[55][60] = 0
+    img[30][100] = 255
+    img[70][150] = 255
+    img[180][150] = 0
 
     binary_image_flag = True
-    show_plt_image(img)
+    show_plt_image(img, 'Original image with isolated pixels')
 
 elif img_name == 'calc.png':
 
@@ -113,7 +139,7 @@ elif img_name == 'calc.png':
     assert ((img == 0) | (img == 255)).all()
 
     binary_image_flag = True
-    show_plt_image(img)
+    show_plt_image(img,  'Original image with isolated pixels')
 
 elif img_name == 'crosses.png':
 
@@ -130,16 +156,18 @@ elif img_name == 'crosses.png':
 
     binary_image_flag = True
 
-    show_plt_image(img)
+    show_plt_image(img,  'Original image with isolated pixels')
 
 else:
     raise Exception('Image name not defined, var: img_name')
 
 if image_save_switch is True:
 
+    image_to_write = Image.fromarray(img).convert('L')
+
     # save the path to where the paper figures are required
     save_path = image_save_path + '/' + img_name
-    plt.savefig(save_path)
+    image_to_write.save(save_path)
 
 # %% Template Matching
 ############################
@@ -149,76 +177,76 @@ if image_save_switch is True:
 ############################
 
 # %% test
-test_input = np.array([[0, 255, 0],
-                       [0, 0, 0],
-                       [0, 255, 0]], dtype=np.uint8)
+# test_input = np.array([[0, 255, 0],
+#                        [0, 0, 0],
+#                        [0, 255, 0]], dtype=np.uint8)
 
-test_kernel = np.array([[0, 1, 0],
-                        [0,  0,  0],
-                        [0, 1, 0]], dtype=np.uint8)
+# test_kernel = np.array([[0, 1, 0],
+#                         [0,  0,  0],
+#                         [0, 1, 0]], dtype=np.uint8)
 
-# test_input = np.array((
-#     [0, 0, 0, 0, 0, 0, 0, 0],
-#     [0, 255, 255, 255, 0, 0, 0, 255],
-#     [0, 255, 255, 255, 0, 0, 0, 0],
-#     [0, 255, 255, 255, 0, 255, 0, 0],
-#     [0, 0, 255, 0, 0, 0, 0, 0],
-#     [0, 0, 255, 0, 0, 255, 255, 0],
-#     [0,255, 0, 255, 0, 0, 255, 0],
-#     [0, 255, 255, 255, 0, 0, 0, 0]), dtype="uint8")
+# # test_input = np.array((
+# #     [0, 0, 0, 0, 0, 0, 0, 0],
+# #     [0, 255, 255, 255, 0, 0, 0, 255],
+# #     [0, 255, 255, 255, 0, 0, 0, 0],
+# #     [0, 255, 255, 255, 0, 255, 0, 0],
+# #     [0, 0, 255, 0, 0, 0, 0, 0],
+# #     [0, 0, 255, 0, 0, 255, 255, 0],
+# #     [0,255, 0, 255, 0, 0, 255, 0],
+# #     [0, 255, 255, 255, 0, 0, 0, 0]), dtype="uint8")
 
-# test_kernel = np.array((
-#         [0, 1, -1],
-#         [1, -1, -1],
-#         [0, 1, 0]), dtype="int")
+# # test_kernel = np.array((
+# #         [0, 1, -1],
+# #         [1, -1, -1],
+# #         [0, 1, 0]), dtype="int")
 
-# test_kernel = np.array((
-#         [-1, -1, -1],
-#         [-1, 1, -1],
-#         [-1, -1, -1]), dtype="int")
+# # test_kernel = np.array((
+# #         [-1, -1, -1],
+# #         [-1, 1, -1],
+# #         [-1, -1, -1]), dtype="int")
 
-cv2.morphologyEx(test_input,
-                 cv2.MORPH_HITMISS,
-                 np.asarray(test_kernel))
+# cv2.morphologyEx(test_input,
+#                  cv2.MORPH_HITMISS,
+#                  np.asarray(test_kernel))
 
 
 # %% hit and miss transform for central white pixel only
 
-# input_image = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)[1]
+# # input_image = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)[1]
 
-input_image = img_proc
-kernel = np.array([[-1, -1, -1],
-                   [-1,  1, -1],
-                   [-1, -1, -1]], dtype="int")
+# input_image = img_proc
+# kernel = np.array([[-1, -1, -1],
+#                    [-1,  1, -1],
+#                    [-1, -1, -1]], dtype="int")
 
-single_pixels = cv2.morphologyEx(input_image, cv2.MORPH_HITMISS, kernel)
-# single_pixels_inv = cv2.bitwise_not(single_pixels)
-# hm = cv2.bitwise_and(input_image, input_image, mask=single_pixels_inv)
+# single_pixels = cv2.morphologyEx(input_image, cv2.MORPH_HITMISS, kernel)
+# # single_pixels_inv = cv2.bitwise_not(single_pixels)
+# # hm = cv2.bitwise_and(input_image, input_image, mask=single_pixels_inv)
 
-# show figure
-fig = plt.figure(figsize=(20, 8))
-ax1 = fig.add_subplot(111)
-ax1.imshow(single_pixels, cmap='gray')
-plt.show()
+# # show figure
+# fig = plt.figure(figsize=(20, 8))
+# ax1 = fig.add_subplot(111)
+# ax1.imshow(single_pixels, cmap='gray')
+# plt.show()
 
 # %% hit and miss transform for central black pixel only
 
-# input_image = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)[1]
+# # input_image = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)[1]
 
-input_image = img
-kernel = np.array([[1,  1, 1],
-                   [1, -1, 1],
-                   [1,  1, 1]], dtype="int")
+# input_image = img
+# kernel = np.array([[1,  1, 1],
+#                    [1, -1, 1],
+#                    [1,  1, 1]], dtype="int")
 
-single_pixels = cv2.morphologyEx(input_image, cv2.MORPH_HITMISS, kernel)
-# single_pixels_inv = cv2.bitwise_not(single_pixels)
-# hm = cv2.bitwise_and(input_image, input_image, mask=single_pixels_inv)
+# single_pixels = cv2.morphologyEx(input_image, cv2.MORPH_HITMISS, kernel)
+# # single_pixels_inv = cv2.bitwise_not(single_pixels)
+# # hm = cv2.bitwise_and(input_image, input_image, mask=single_pixels_inv)
 
-# show figure
-fig = plt.figure(figsize=(20, 8))
-ax1 = fig.add_subplot(111)
-ax1.imshow(single_pixels, cmap='gray')
-plt.show()
+# # show figure
+# fig = plt.figure(figsize=(20, 8))
+# ax1 = fig.add_subplot(111)
+# ax1.imshow(single_pixels, cmap='gray')
+# plt.show()
 
 # %% hit or miss transform function
 def hit_and_miss_transform(input_img):
@@ -264,6 +292,14 @@ plot_hit_and_miss_output(img, h_and_miss_img)
 
 print("Number of isolated pixels located by Laplacian is: {}"
       .format(np.count_nonzero(h_and_miss_img)))
+
+if image_save_switch is True:
+
+    image_to_write = Image.fromarray(h_and_miss_img).convert('L')
+
+    # save the path to where the paper figures are required
+    save_path = image_save_path + '/' + 'h_&_m_' + img_name
+    image_to_write.save(save_path)
 
 # %%
 ############################
@@ -360,7 +396,7 @@ plt.show()
 # %% detect isolated pixels using neural network
 
 start_time = time.time()
-filtered_image, filtered_response = detect_isolated_points(
+filtered_image, filter_response = detect_isolated_points(
     img, excite_num=1, inhib_sum_num=0, kernel_size=kernel_size
 )
 end_time = time.time()
@@ -369,10 +405,9 @@ execution_time = end_time - start_time
 print(f"Execution time: {execution_time:.4f} seconds")
 
 # Print the number of isolated pixels
-print("Number of isolated pixels located by net is: {}".format(np.count_nonzero(filtered_response)))
+print("Number of isolated pixels located by net is: {}".format(np.count_nonzero(filter_response)))
 
-# Display anomaly response pixels
-display_image_plus_responses(img, filtered_response, "Anomaly Response Pixels", kernel_size)
+show_plt_image(img, 'Original image', filtered_image, "Filtered image")
+show_plt_image(img, 'Original image', filter_response, "Anomaly Response Pixels")
 
-# Display filtered image
-display_image_plus_responses(img, filtered_image, "Filtered Image", kernel_size)
+# %%

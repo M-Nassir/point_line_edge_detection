@@ -72,13 +72,13 @@ def get_response_isolation(data,
 
 
 # Function to display image with original image
-def display_image_plus_responses(img, filter_resp_array, title, kernel_size):
-    n = img.shape[0]
-    m = img.shape[1]
+def display_image_plus_responses(img, img2, title):
+    # n = img.shape[0]
+    # m = img.shape[1]
 
-    # create the image from the filter response array
-    new_image = np.array(filter_resp_array)
-    new_image = new_image.reshape(n - kernel_size + 1, m - kernel_size + 1)
+    # # create the image from the filter response array
+    # new_image = np.array(filter_resp_array)
+    # new_image = new_image.reshape(n - kernel_size + 1, m - kernel_size + 1)
 
     # if new_image.dtype != np.uint8:
     #     new_image = Image.fromarray((new_image * 255).astype(np.uint8))
@@ -88,10 +88,9 @@ def display_image_plus_responses(img, filter_resp_array, title, kernel_size):
     ax1 = fig.add_subplot(121)
     ax2 = fig.add_subplot(122)
     ax1.imshow(img)
-    ax2.imshow(new_image)
+    ax2.imshow(img2)
     ax2.set_title(title)
     plt.show()
-
 
 
 def detect_isolated_points(img, excite_num=1, inhib_sum_num=0, kernel_size=3):
@@ -174,4 +173,11 @@ def detect_isolated_points(img, excite_num=1, inhib_sum_num=0, kernel_size=3):
 
             filter_response_map_arr[i] = 0
 
-    return filtered_image_arr, filter_response_map_arr
+        # format the arrays to be of the correct image size
+        n = img.shape[0]
+        m = img.shape[1]
+
+        f_image = filtered_image_arr.reshape(n - kernel_size + 1, m - kernel_size + 1)
+        f_respo = filter_response_map_arr.reshape(n - kernel_size + 1, m - kernel_size + 1)
+
+    return f_image, f_respo

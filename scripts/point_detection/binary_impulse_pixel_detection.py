@@ -79,7 +79,7 @@ image_options = [
 ]
 
 # Select the desired image by its index (0-based)
-selected_image_index = 0
+selected_image_index = 1
 
 # Get the selected image name
 img_name = image_options[selected_image_index]
@@ -366,7 +366,7 @@ plt.show()
 # %%
 ################################
 #
-#       Neural Network Model
+#       Neuron Model
 #
 ################################
 

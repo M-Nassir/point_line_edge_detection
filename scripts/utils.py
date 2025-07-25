@@ -3,8 +3,79 @@
 from PIL import Image
 from matplotlib import pyplot as plt
 import numpy as np
-from perception import Perception
+from perception_nassir import Perception
 import random
+
+# %%
+##############################################################################
+#
+#                               Functions
+#
+##############################################################################
+
+"""
+Compute filtering of input image with retina like receptive fields
+to arrive at a pre-filtered image that carries essential contrast information
+and has removed largely most noise.
+"""
+
+
+def retina_filter():
+    pass
+
+
+# def call_line_filter(labels,
+#                      idx_excite, excite_num,
+#                      idx_inhib, inhib_num,
+#                      line_angle):
+
+#     trigger = False
+#     angle = None
+
+#     if np.sum(labels[idx_inhib]) > inhib_sum_num:
+#         pass
+#     elif np.sum(labels[idx_excite]) != excite_num:
+#         pass
+#     else:
+#         trigger = True
+#         angle = line_angle
+
+#     return trigger, angle
+
+# @interact(parameter=widgets.IntSlider(min=0, max=400, step=1, value=1))
+
+
+"""
+Plot the image patch responsible for firing the filter
+"""
+
+
+def plot_filter_image(arr, parameter):
+
+    # plot the filter images
+    img = np.array(arr[parameter].reshape(3, 3))
+    print(img)
+    fig = plt.figure(figsize=(20, 8))
+    ax1 = fig.add_subplot(111)
+    ax1.imshow(img, cmap='gray', vmin=0, vmax=255)
+    plt.show()
+
+
+"""
+Plot the receptive field of the filter (identified as binary responses),
+where 0 represent inhibition, and 1's represent excitation'
+"""
+
+
+def plot_binary_image(arr, parameter, colour_shade='cividis'):
+
+    # plot the filter images
+    img = np.array(arr[parameter].reshape(3, 3))
+    print(img)
+    fig = plt.figure(figsize=(20, 8))
+    ax1 = fig.add_subplot(111)
+    ax1.imshow(img, cmap=colour_shade)
+    plt.show()
 
 
 def get_rolling_windows(input_array, kernel_size,

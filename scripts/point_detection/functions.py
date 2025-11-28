@@ -8,6 +8,21 @@ from perception_nassir import Perception
 from utils import get_rolling_windows
 from matplotlib import pyplot as plt
 from PIL import Image
+from pathlib import Path
+
+def load_paths(levels_up=2):
+    """
+    Returns:
+        project_root, data_path, image_save_path
+    """
+    project_root = Path(__file__).resolve().parents[levels_up]
+    data_path = project_root / "data"
+    path_file = project_root / "paths.txt"
+
+    with open(path_file) as f:
+        image_save_path = f.readline().strip()
+
+    return project_root, data_path, image_save_path
 
 def get_response_isolation(data,
                            idx_inhib, idx_excite,

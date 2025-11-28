@@ -31,15 +31,82 @@ from point_line_edge_detection.scripts.point_detection.functions import (
     detect_isolated_points,
     show_plt_images,
     load_paths,
+    save_if_enabled,
 )
 from point_line_edge_detection.scripts.point_detection.process_image import (
     process_image,
 )
 
+# %% -------- Functions --------
+def run_neural_detection(img, kernel_size=3):
+    """Run the neural isolated-point detector and return results + timing."""
+    start_time = time.time()
+
+    filtered_image, filter_response = detect_isolated_points(
+        img,
+        excite_sum_num=1,
+        inhib_sum_num=0,
+        kernel_size=kernel_size,
+    )
+
+    execution_time = time.time() - start_time
+    num_isolated = np.count_nonzero(filter_response)
+
+    return filtered_image, filter_response, execution_time, num_isolated
+
+def run_laplacian_detection(img, kernel, use_manual=True, manual_ratio=0.7):
+    """Apply Laplacian filter and compute a binary anomaly map."""
+    ddepth = cv2.CV_16S
+
+    # Apply Laplacian
+    dst = cv2.filter2D(img, ddepth=ddepth, kernel=kernel)
+    abs_dst = np.abs(dst)
+
+    # Manual threshold
+    manual_threshold = int(manual_ratio * np.max(abs_dst))
+
+    # Otsu threshold
+    _, otsu_threshold = cv2.threshold(
+        np.uint8(abs_dst),
+        0,
+        abs_dst.max(),
+        cv2.THRESH_BINARY + cv2.THRESH_OTSU
+    )
+
+    threshold_used = manual_threshold if use_manual else otsu_threshold
+
+    laplacian_binary = (abs_dst > threshold_used).astype(int)
+    num_detected = int(np.sum(laplacian_binary))
+
+    return laplacian_binary, num_detected, threshold_used
+
+def run_laplacian_otsu_only(img, kernel):
+    """Laplacian filtered output using only Otsu threshold on normalized output."""
+    ddepth = cv2.CV_16S
+
+    dst = cv2.filter2D(img, ddepth=ddepth, kernel=kernel)
+    dst_8u = np.uint8(255 * dst / np.max(dst))
+
+    _, otsu_threshold = cv2.threshold(
+        dst_8u, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+    )
+
+    otsu_binary = (dst_8u > otsu_threshold).astype(int)
+    num_detected = int(np.sum(otsu_binary))
+
+    return dst_8u, otsu_binary, num_detected
+
 # %% -------- Parameters --------
 KERNEL_SIZE = 3
 BINARY_IMAGE_FLAG = True
 IMAGE_SAVE_SWITCH = False
+
+# Laplacian kernel
+LAPLACIAN_KERNEL = np.array([
+    [-1, -1, -1],
+    [-1,  8, -1],
+    [-1, -1, -1],
+])
 
 # %% -------- Paths and Image Selection --------
 root, data_path, image_save_path = load_paths()
@@ -53,11 +120,11 @@ IMAGE_OPTIONS = {
 }
 
 selected_image_index = 3
+img_name = IMAGE_OPTIONS[selected_image_index]
 
-if selected_image_index not in IMAGE_OPTIONS:
+if img_name is None:
     raise ValueError(f"Invalid image index: {selected_image_index}")
 
-img_name = IMAGE_OPTIONS[selected_image_index]
 img, binary_image_flag, img_title = process_image(img_name, data_path)
 
 show_plt_images(img, img1_title=img_title)
@@ -76,89 +143,41 @@ if IMAGE_SAVE_SWITCH:
 # %% ============================================================
 #                       Neural Model Detection
 # ===============================================================
-start_time = time.time()
-
-filtered_image, filter_response = detect_isolated_points(
-    img,
-    excite_sum_num=1,
-    inhib_sum_num=0,
-    kernel_size=KERNEL_SIZE,
+filtered_image, filter_response, execution_time, num_isolated = run_neural_detection(
+    img, kernel_size=KERNEL_SIZE
 )
 
-execution_time = time.time() - start_time
 print(f"Execution time: {execution_time:.4f} seconds")
+print(f"Number of isolated pixels detected by neural model: {num_isolated}")
 
 show_plt_images(img, "Original image", filtered_image, "Filtered image")
 show_plt_images(img, "Original image", filter_response, "Anomaly Response Pixels")
 
-num_isolated = np.count_nonzero(filter_response)
-print(f"Number of isolated pixels detected by neural model: {num_isolated}")
-
-if IMAGE_SAVE_SWITCH:
-    Image.fromarray((filter_response * 255).astype("uint8")).save(
-        f"{image_save_path}/neuron_{img_name}"
-    )
+save_if_enabled(IMAGE_SAVE_SWITCH, filter_response, image_save_path, img_name, prefix="neuron_")
 
 # %% ============================================================
-#                      Image Derivatives: Laplacian
+#                 Laplacian Detection (Manual or Otsu)
 # ===============================================================
-
-# Laplacian kernel (manual)
-kernel = np.array([
-    [-1, -1, -1],
-    [-1,  8, -1],
-    [-1, -1, -1],
-])
-
-ddepth = cv2.CV_16S
-
-# Apply Laplacian via filter2D
-dst = cv2.filter2D(img, ddepth=ddepth, kernel=kernel)
-abs_dst = np.abs(dst)
-
-# Manual threshold (x% of max)
-manual_threshold = int(0.7 * np.max(abs_dst))
-
-# Otsu thresholding
-_, otsu_threshold = cv2.threshold(
-    np.uint8(abs_dst),
-    0,
-    abs_dst.max(),
-    cv2.THRESH_BINARY + cv2.THRESH_OTSU
+laplacian_binary, num_laplacian, threshold_used = run_laplacian_detection(
+    img, LAPLACIAN_KERNEL, use_manual=True, manual_ratio=0.7
 )
 
-use_simple = True
-threshold_used = manual_threshold if use_simple else otsu_threshold
-
-print(f"Using threshold: {'manual' if use_simple else 'Otsu'}")
-
-# Binary anomaly map
-laplacian_binary = (abs_dst > threshold_used).astype(int)
-
-num_laplacian = np.sum(laplacian_binary)
+print(f"Using threshold: {threshold_used}")
 print(f"Laplacian isolated pixels: {num_laplacian}")
 
 show_plt_images(img, "Original image", laplacian_binary, "Laplacian Response")
 
-if IMAGE_SAVE_SWITCH:
-    Image.fromarray((laplacian_binary * 255).astype("uint8")).save(
-        f"{image_save_path}/laplacian_{img_name}"
-    )
-
-# %% ============================================================
-#                 Option 2: Otsu-only Laplacian
-# ===============================================================
-dst = cv2.filter2D(img, ddepth=ddepth, kernel=kernel)
-
-dst_8u = np.uint8(255 * dst / np.max(dst))
-
-_, otsu_threshold = cv2.threshold(
-    dst_8u, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+save_if_enabled(
+    IMAGE_SAVE_SWITCH, laplacian_binary, image_save_path, img_name, prefix="laplacian_"
 )
 
-otsu_output = (dst_8u > otsu_threshold).astype(int)
+# %% ============================================================
+#                 Otsu-only Laplacian
+# ===============================================================
 
-print(f"Otsu-only Laplacian isolated pixels: {np.sum(otsu_output)}")
+dst_8u, otsu_output, num_otsu = run_laplacian_otsu_only(img, LAPLACIAN_KERNEL)
+
+print(f"Otsu-only Laplacian isolated pixels: {num_otsu}")
 
 fig = plt.figure(figsize=(20, 8))
 plt.gray()
@@ -166,8 +185,6 @@ plt.subplot(1, 2, 1).imshow(dst_8u)
 plt.subplot(1, 2, 2).imshow(otsu_output)
 plt.show()
 
-# NOTE:
+# %% NOTE:
 # Laplacian output remains highly sensitive to threshold selection
 # and still produces false positives even in simple scenarios.
-
-# %%

@@ -19,77 +19,19 @@ This script evaluates:
 """
 
 # %% -------- Imports --------
-import time
 import numpy as np
-import cv2
 from PIL import Image
 
 from point_line_edge_detection.scripts.point_detection.functions import (
-    detect_isolated_points,
     show_plt_images,
     load_paths,
     save_if_enabled,
+    run_neural_detection,
+    run_laplacian_detection,
 )
 from point_line_edge_detection.scripts.point_detection.process_image import (
     load_and_preprocess_image,
 )
-
-# %% -------- Functions --------
-def run_neural_detection(img, kernel_size=3):
-    """Run the neural isolated-point detector and return results + timing."""
-    start_time = time.time()
-
-    filtered_image, filter_response = detect_isolated_points(
-        img,
-        excite_sum_num=1,
-        inhib_sum_num=0,
-        kernel_size=kernel_size,
-    )
-
-    execution_time = time.time() - start_time
-    num_isolated = np.count_nonzero(filter_response)
-
-    return filtered_image, filter_response, execution_time, num_isolated
-
-def run_laplacian_detection(img, kernel, use_manual_threshold=True, manual_ratio=0.7):
-    """
-    Apply Laplacian filter and compute a binary anomaly map using either
-    manual threshold or correct Otsu threshold (on abs Laplacian).
-    """
-    ddepth = cv2.CV_16S
-
-    # Apply Laplacian
-    dst = cv2.filter2D(img, ddepth=ddepth, kernel=kernel)
-    abs_dst = np.abs(dst).astype(np.float32)
-    max_val = abs_dst.max()
-
-    # Manual threshold
-    manual_threshold = manual_ratio * max_val
-
-    # Otsu threshold
-    
-    # Normalize to 0-255 for Otsu
-    scaled = (255 * abs_dst / max_val).astype(np.uint8)
-
-    # Otsu: ret = scalar threshold (0–255), thresh_img = output binary
-    otsu_T, otsu_threshold_8u = cv2.threshold(
-        scaled,
-        0,
-        255,
-        cv2.THRESH_BINARY + cv2.THRESH_OTSU
-    )
-
-    # Convert Otsu threshold back to real scale
-    otsu_threshold_real = (otsu_T / 255.0) * max_val
-    
-    # Pick threshold
-    threshold_used = manual_threshold if use_manual_threshold else otsu_threshold_real
-
-    # Binary mask
-    anomalies_mask = (abs_dst > threshold_used).astype(int)
-    num_detected = int(np.sum(anomalies_mask))
-
-    return anomalies_mask, num_detected, threshold_used
 
 # %% -------- Parameters --------
 KERNEL_SIZE = 3

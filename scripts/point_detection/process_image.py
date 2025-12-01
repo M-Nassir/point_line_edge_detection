@@ -1,8 +1,9 @@
 import numpy as np
 from PIL import Image
 from pathlib import Path
+import cv2
 
-def process_image(img_name, data_path):
+def load_and_preprocess_image(img_name, data_path):
 
     # form full image path
     img_path = data_path / img_name
@@ -45,6 +46,48 @@ def process_image(img_name, data_path):
         # image is natural so do no use binary detection
         binary_image_flag = False
         img_title = 'Original image with 9 isolated pixels'
+
+    elif img_name == "circles_matlab.png":
+        
+        # Ensure the image is binary
+        assert np.isin(img, [0, 255]).all(), "Image must be binary (0 or 255)"
+
+        # Crop region of interest
+        img = img[45:280, 100:300]
+
+        # Manually insert isolated pixels
+        img[25, 25] = 0
+        img[55, 60] = 0
+        img[30, 100] = 255
+        img[70, 150] = 255
+        img[180, 150] = 0
+
+        binary_image_flag = True
+        img_title = "Original image with 5 isolated pixels"
+
+    elif img_name == "calc.png":
+        
+        # Binarise with a threshold of 10
+        _, img = cv2.threshold(img, 10, 255, cv2.THRESH_BINARY)
+
+        assert np.isin(img, [0, 255]).all(), "Image must be binary (0 or 255)"
+
+        binary_image_flag = True
+        img_title = "Original image with original isolated pixels"
+
+    elif img_name == "crosses.png":
+        
+        # Binarise with a threshold of 20
+        _, img = cv2.threshold(img, 20, 255, cv2.THRESH_BINARY)
+        assert np.isin(img, [0, 255]).all(), "Image must be binary (0 or 255)"
+
+        # Add isolated pixels
+        img[200, 175] = 255
+        img[75, 150] = 255
+        img[75, 200] = 255
+
+        binary_image_flag = True
+        img_title = "Original image with 3 added isolated pixels"
 
     else:
         binary_image_flag = False

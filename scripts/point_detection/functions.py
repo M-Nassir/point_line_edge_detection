@@ -27,12 +27,29 @@ def load_paths(levels_up=2):
     return project_root, data_path, image_save_path
 
 
-def save_if_enabled(image_save_switch, mask, image_save_path, img_name, prefix=""):
-    
-    if image_save_switch:
-        Image.fromarray((mask * 255).astype("uint8")).save(
-            f"{image_save_path}/{prefix}{img_name}"
-        )
+def save_if_enabled(image_save_switch, img, image_save_path, img_name, prefix=""):
+    if not image_save_switch:
+        return
+
+    unique_vals = np.unique(img)
+
+    # Robust binary mask detection: values must be exactly {0}, {1}, or {0,1}
+    is_mask = (
+        img.dtype == bool or
+        np.array_equal(unique_vals, [0]) or
+        np.array_equal(unique_vals, [1]) or
+        np.array_equal(unique_vals, [0, 1])
+    )
+
+    if is_mask:
+        img_to_save = (img.astype("uint8") * 255)
+    elif np.issubdtype(img.dtype, np.floating) and img.min() >= 0 and img.max() <= 1:
+        img_to_save = (img * 255).astype("uint8")
+    else:
+        img_to_save = img.astype("uint8")
+
+    Image.fromarray(img_to_save).save(f"{image_save_path}/{prefix}{img_name}")
+
 
         
 def get_response_isolation(data,
@@ -349,4 +366,41 @@ def run_laplacian_detection(img, kernel, use_manual_threshold=True, manual_ratio
     anomalies_mask = (abs_dst > threshold_used).astype(int)
     num_detected = int(np.sum(anomalies_mask))
 
-    return anomalies_mask, num_detected, threshold_used
+    return anomalies_mask, abs_dst, num_detected, threshold_used
+
+def hit_and_miss_transform(input_img: np.ndarray) -> np.ndarray:
+    # --- Validate binary image ---
+    unique_vals = np.unique(input_img)
+
+    # Allowed binary sets: {0,1} or {0,255}
+    if not (
+        np.array_equal(unique_vals, [0, 1]) or
+        np.array_equal(unique_vals, [0, 255])
+    ):
+        raise ValueError(
+            f"Input image must be binary with values {0,1} or {0,255}, "
+            f"but unique values found were: {unique_vals}"
+        )
+
+    # Convert 0/255 → 0/1 for consistent hit-or-miss behavior
+    binary_img = (input_img > 0).astype(np.uint8)
+
+    # --- Structuring elements ---
+    kernel_white = np.array([
+        [-1, -1, -1],
+        [-1,  1, -1],
+        [-1, -1, -1]
+    ], dtype=int)
+
+    kernel_black = np.array([
+        [1, 1, 1],
+        [1, -1, 1],
+        [1, 1, 1]
+    ], dtype=int)
+
+    # --- Apply hit-or-miss ---
+    white_pixels = cv2.morphologyEx(binary_img, cv2.MORPH_HITMISS, kernel_white)
+    black_pixels = cv2.morphologyEx(binary_img, cv2.MORPH_HITMISS, kernel_black)
+
+    # --- Combine results ---
+    return cv2.bitwise_or(white_pixels, black_pixels)

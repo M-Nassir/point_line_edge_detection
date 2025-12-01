@@ -54,9 +54,14 @@ IMAGE_OPTIONS = {
     1: "camera_man.png",               # real-world
     2: "turbine_blade_black_dot.png",  # real-world
     3: "mach_bands.png",               # synthetic
+
+    # black and white images for comparison
+    4: "circles_matlab.png",
+    5: "calc.png",
+    6: "crosses.png"
 }
 
-selected_image_index = 3
+selected_image_index = 4
 img_name = IMAGE_OPTIONS[selected_image_index]
 
 if img_name is None:
@@ -95,7 +100,7 @@ save_if_enabled(IMAGE_SAVE_SWITCH, filter_response, image_save_path, img_name, p
 # %% ============================================================
 #                 Laplacian Detection (Manual or Otsu)
 # ===============================================================
-laplacian_binary, num_laplacian, threshold_used = run_laplacian_detection(
+laplacian_binary, lablacian_abs_response, num_laplacian, threshold_used = run_laplacian_detection(
     img, LAPLACIAN_KERNEL, use_manual_threshold=True, manual_ratio=0.7
 )
 
@@ -103,6 +108,7 @@ print(f"Laplacian threshold used: {threshold_used}")
 print(f"Number of Laplacian isolated pixels: {num_laplacian}")
 
 show_plt_images(img, "Original image", laplacian_binary, "Laplacian Response")
+show_plt_images(img, "Original image", lablacian_abs_response, "Laplacian Absolute Response")
 
 save_if_enabled(IMAGE_SAVE_SWITCH, laplacian_binary, image_save_path, img_name, prefix="laplacian_")
 
@@ -110,7 +116,7 @@ save_if_enabled(IMAGE_SAVE_SWITCH, laplacian_binary, image_save_path, img_name, 
 #                 Otsu-only Laplacian
 # ===============================================================
 
-otsu_output, num_otsu, threshold_used = run_laplacian_detection(
+otsu_output, otsu_abs_response, num_otsu, threshold_used = run_laplacian_detection(
     img, LAPLACIAN_KERNEL, use_manual_threshold=False, manual_ratio=0.7
 )
 
@@ -118,6 +124,7 @@ print(f"Otsu-Laplacian threshold used: {threshold_used}")
 print(f"Number of Otsu-Laplacian isolated pixels: {num_otsu}")
 
 show_plt_images(img, "Original image", otsu_output, "Otsu-Laplacian Response")
+show_plt_images(img, "Original image", otsu_abs_response, "Otsu-Laplacian Absolute Response")
 
 save_if_enabled(IMAGE_SAVE_SWITCH, otsu_output, image_save_path, img_name, prefix="otsu-laplacian_")
 

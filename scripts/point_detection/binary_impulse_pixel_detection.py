@@ -24,19 +24,15 @@ The hit-or-miss transform reliably detects isolated pixels due to its template-m
 
 # %% -------- Imports --------
 import cv2
-from matplotlib import pyplot as plt
-from PIL import Image
 import numpy as np
-import time
-from pathlib import Path
 
 from point_line_edge_detection.scripts.point_detection.functions import (
-    detect_isolated_points,
     show_plt_images,
     load_paths,
     save_if_enabled,
     run_neural_detection,
-    run_laplacian_detection
+    run_laplacian_detection,
+    hit_and_miss_transform
 )
 from point_line_edge_detection.scripts.point_detection.process_image import (
     load_and_preprocess_image,
@@ -74,10 +70,87 @@ img, binary_image_flag, img_title = load_and_preprocess_image(img_name, data_pat
 
 show_plt_images(img, img1_title=img_title)
 
-if IMAGE_SAVE_SWITCH:
-    Image.fromarray(img).convert('L').save(f"{image_save_path}/{img_name}")
+save_if_enabled(IMAGE_SAVE_SWITCH, img, image_save_path, img_name, prefix="")
+
+# %% ============================================================
+#                 Hit and Miss Transform
+# ===============================================================
+
+# Apply hit-and-miss transform
+h_and_miss_img = hit_and_miss_transform(img)
+numb_isolated = np.count_nonzero(h_and_miss_img)
+
+show_plt_images(img, "Original image", h_and_miss_img, "Hit and Miss Response")
+print(f"Number of isolated pixels located by Hit and Miss is: {numb_isolated}")
+
+save_if_enabled(IMAGE_SAVE_SWITCH, h_and_miss_img, image_save_path, img_name, prefix="h_&_m_")
+
+# %% ============================================================
+#                 Laplacian Detection (Manual or Otsu)
+# ===============================================================
+laplacian_binary, lablacian_abs_response, num_laplacian, threshold_used = run_laplacian_detection(
+    img, LAPLACIAN_KERNEL, use_manual_threshold=True, manual_ratio=0.9
+)
+
+print(f"Laplacian threshold used: {threshold_used}")
+print(f"Number of Laplacian isolated pixels: {num_laplacian}")
+
+show_plt_images(img, "Original image", laplacian_binary, "Laplacian Response")
+show_plt_images(img, "Original image", lablacian_abs_response, "Laplacian Absolute Response")
+
+save_if_enabled(IMAGE_SAVE_SWITCH, laplacian_binary, image_save_path, img_name, prefix="laplacian_")
 
 
+# %% ============================================================
+#                       Neural Model Detection
+# ===============================================================
+filtered_image, filter_response, execution_time, num_isolated = run_neural_detection(
+    img, kernel_size=KERNEL_SIZE
+)
+
+print(f"Execution time: {execution_time:.4f} seconds")
+print(f"Number of isolated pixels detected by neural model: {num_isolated}")
+
+show_plt_images(img, "Original image", filtered_image, "Filtered image")
+show_plt_images(img, "Original image", filter_response, "Anomaly Response Pixels")
+
+save_if_enabled(IMAGE_SAVE_SWITCH, filter_response, image_save_path, img_name, prefix="neuron_")
+
+
+# %% ============================================================
+#                       Median Filtering
+# ===============================================================
+# doesn't find isolated pixels, just smoothes, but gets rid of lines!
+
+# Apply the median filter to the image
+filtered_img = cv2.medianBlur(img, KERNEL_SIZE)
+
+show_plt_images(img, "Original image", filtered_img, "Filtered image")
+
+
+
+
+
+# %% ============================================================
+#                       Test Area
+# ===============================================================
+
+# kernel =np.array([[0, 1, 0] , [1, -4, 1] , [0, 1, 0]])
+# kernel =np.array([[-2, 0, -2] , [0, 8, 0] , [-2, 0, -2]])
+# kernel =np.array([[-1, -1, -1] , [-1, 8, -1] , [-1, -1, -1]])
+
+# v = np.array([
+#     [0, 0, 0, 0, 0, 0, 0, ],
+#     [0, 0, 0, 0, 0, 0, 0, ],
+#     [0, 0, 0, 1, 0, 0, 0, ],
+#     [0, 0, 0, 0, 0, 0, 0, ],
+#     [0, 0, 0, 0, 0, 0, 0, ],
+
+# ])
+# v = v.astype(np.uint8)
+
+# dst1 = cv2.filter2D(v, ddepth=cv2.CV_64F, kernel=kernel)
+# dst1
 # %% Template Matching
 ############################
 
@@ -153,104 +226,4 @@ if IMAGE_SAVE_SWITCH:
 # ax1.imshow(single_pixels, cmap='gray')
 # plt.show()
 
-# %% hit or miss transform function
-def hit_and_miss_transform(input_img: np.ndarray) -> np.ndarray:
-    kernel_white = np.array([
-        [-1, -1, -1],
-        [-1,  1, -1],
-        [-1, -1, -1]
-    ], dtype=int)
-    kernel_black = np.array([
-        [1, 1, 1],
-        [1, -1, 1],
-        [1, 1, 1]
-    ], dtype=int)
-    white_pixels = cv2.morphologyEx(input_img, cv2.MORPH_HITMISS, kernel_white)
-    black_pixels = cv2.morphologyEx(input_img, cv2.MORPH_HITMISS, kernel_black)
-    return cv2.bitwise_or(white_pixels, black_pixels)
 
-def plot_hit_and_miss_output(input_img, h_and_m_output):
-
-    fig = plt.figure(figsize=(20, 8))
-    plt.gray()
-    # Original Image
-    ax1 = fig.add_subplot(121)
-    ax1.imshow(input_img)
-    ax1.set_title('Original Image')
-
-    ax2 = fig.add_subplot(122)
-    ax2.imshow(h_and_m_output)
-    ax2.set_title('Pixels Detected by Hit and Miss Transform')
-
-    plt.tight_layout()
-    plt.show()
-
-h_and_miss_img = hit_and_miss_transform(img)
-plot_hit_and_miss_output(img, h_and_miss_img)
-
-print("Number of isolated pixels located by Hit and Miss is: {}"
-      .format(np.count_nonzero(h_and_miss_img)))
-
-if IMAGE_SAVE_SWITCH: 
-    Image.fromarray(h_and_miss_img).convert('L').save(f"{image_save_path}/h_&_m_{img_name}")
-
-
-# %% ============================================================
-#                 Laplacian Detection (Manual or Otsu)
-# ===============================================================
-laplacian_binary, lablacian_abs_response, num_laplacian, threshold_used = run_laplacian_detection(
-    img, LAPLACIAN_KERNEL, use_manual_threshold=True, manual_ratio=0.9
-)
-
-print(f"Laplacian threshold used: {threshold_used}")
-print(f"Number of Laplacian isolated pixels: {num_laplacian}")
-
-show_plt_images(img, "Original image", laplacian_binary, "Laplacian Response")
-show_plt_images(img, "Original image", lablacian_abs_response, "Laplacian Absolute Response")
-
-save_if_enabled(IMAGE_SAVE_SWITCH, laplacian_binary, image_save_path, img_name, prefix="laplacian_")
-
-
-# %% test code for what kernel is being applied
-# kernel =np.array([[0, 1, 0] , [1, -4, 1] , [0, 1, 0]])
-# kernel =np.array([[-2, 0, -2] , [0, 8, 0] , [-2, 0, -2]])
-# kernel =np.array([[-1, -1, -1] , [-1, 8, -1] , [-1, -1, -1]])
-
-# v = np.array([
-#     [0, 0, 0, 0, 0, 0, 0, ],
-#     [0, 0, 0, 0, 0, 0, 0, ],
-#     [0, 0, 0, 1, 0, 0, 0, ],
-#     [0, 0, 0, 0, 0, 0, 0, ],
-#     [0, 0, 0, 0, 0, 0, 0, ],
-
-# ])
-# v = v.astype(np.uint8)
-
-# dst1 = cv2.filter2D(v, ddepth=cv2.CV_64F, kernel=kernel)
-# dst1
-
-# %% ============================================================
-#                       Neural Model Detection
-# ===============================================================
-filtered_image, filter_response, execution_time, num_isolated = run_neural_detection(
-    img, kernel_size=KERNEL_SIZE
-)
-
-print(f"Execution time: {execution_time:.4f} seconds")
-print(f"Number of isolated pixels detected by neural model: {num_isolated}")
-
-show_plt_images(img, "Original image", filtered_image, "Filtered image")
-show_plt_images(img, "Original image", filter_response, "Anomaly Response Pixels")
-
-save_if_enabled(IMAGE_SAVE_SWITCH, filter_response, image_save_path, img_name, prefix="neuron_")
-
-
-# %% -------- Median Filtering --------
-# doesn't find isolated pixels, just smoothes, but gets rid of lines!
-
-# Apply the median filter to the image
-filtered_img = cv2.medianBlur(img, KERNEL_SIZE)
-
-show_plt_images(img, "Original image", filtered_img, "Filtered image")
-
-# %%

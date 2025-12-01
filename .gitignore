@@ -2,3 +2,12 @@ data/*
 to_do/*
 .spyproject/*
 __pycache__/*
+models/*
+*.pyc
+scratchpad/*
+# Ignore everything in scripts
+/scripts/*
+
+# But do NOT ignore the point_detection folder and its contents inside scripts
+!/scripts/point_detection/
+!/scripts/point_detection/**

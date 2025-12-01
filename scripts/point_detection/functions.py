@@ -9,6 +9,8 @@ from utils import get_rolling_windows
 from matplotlib import pyplot as plt
 from PIL import Image
 from pathlib import Path
+import time
+import cv2
 
 def load_paths(levels_up=2):
     """
@@ -24,6 +26,15 @@ def load_paths(levels_up=2):
 
     return project_root, data_path, image_save_path
 
+
+def save_if_enabled(image_save_switch, mask, image_save_path, img_name, prefix=""):
+    
+    if image_save_switch:
+        Image.fromarray((mask * 255).astype("uint8")).save(
+            f"{image_save_path}/{prefix}{img_name}"
+        )
+
+        
 def get_response_isolation(data,
                            idx_inhib, idx_excite,
                            inhib_sum_num=0, excite_sum_num=1,
@@ -90,6 +101,7 @@ def get_response_isolation(data,
 
     return trigger, pixel_median
 
+
 def show_plt_images(img1, img1_title, img2=None, img2_title=None):
     fig = plt.figure(figsize=(20, 8))
     plt.gray()
@@ -116,6 +128,7 @@ def show_plt_images(img1, img1_title, img2=None, img2_title=None):
 
     plt.show()
 
+
 # Function to display image with original image
 def display_image_plus_responses(img, img2, title):
     # n = img.shape[0]
@@ -136,6 +149,7 @@ def display_image_plus_responses(img, img2, title):
     ax2.imshow(img2)
     ax2.set_title(title)
     plt.show()
+
 
 def detect_isolated_points(img, excite_sum_num=1, inhib_sum_num=0, kernel_size=3):
     """
@@ -278,3 +292,61 @@ def detect_isolated_points(img, excite_sum_num=1, inhib_sum_num=0, kernel_size=3
         f_respo = filter_response_map_arr.reshape(n - kernel_size + 1, m - kernel_size + 1)
 
     return f_image, f_respo
+
+
+def run_neural_detection(img, kernel_size=3):
+    """Run the neural isolated-point detector and return results + timing."""
+    start_time = time.time()
+
+    filtered_image, filter_response = detect_isolated_points(
+        img,
+        excite_sum_num=1,
+        inhib_sum_num=0,
+        kernel_size=kernel_size,
+    )
+
+    execution_time = time.time() - start_time
+    num_isolated = np.count_nonzero(filter_response)
+
+    return filtered_image, filter_response, execution_time, num_isolated
+
+
+def run_laplacian_detection(img, kernel, use_manual_threshold=True, manual_ratio=0.7):
+    """
+    Apply Laplacian filter and compute a binary anomaly map using either
+    manual threshold or correct Otsu threshold (on abs Laplacian).
+    """
+    ddepth = cv2.CV_16S
+
+    # Apply Laplacian
+    dst = cv2.filter2D(img, ddepth=ddepth, kernel=kernel)
+    abs_dst = np.abs(dst).astype(np.float32)
+    max_val = abs_dst.max()
+
+    # Manual threshold
+    manual_threshold = manual_ratio * max_val
+
+    # Otsu threshold
+    
+    # Normalize to 0-255 for Otsu
+    scaled = (255 * abs_dst / max_val).astype(np.uint8)
+
+    # Otsu: ret = scalar threshold (0–255), thresh_img = output binary
+    otsu_T, otsu_threshold_8u = cv2.threshold(
+        scaled,
+        0,
+        255,
+        cv2.THRESH_BINARY + cv2.THRESH_OTSU
+    )
+
+    # Convert Otsu threshold back to real scale
+    otsu_threshold_real = (otsu_T / 255.0) * max_val
+    
+    # Pick threshold
+    threshold_used = manual_threshold if use_manual_threshold else otsu_threshold_real
+
+    # Binary mask
+    anomalies_mask = (abs_dst > threshold_used).astype(int)
+    num_detected = int(np.sum(anomalies_mask))
+
+    return anomalies_mask, num_detected, threshold_used

@@ -7,7 +7,7 @@ models/*
 scratchpad/*
 # Ignore everything in scripts
 /scripts/*
-
+*.png
 # But do NOT ignore the point_detection folder and its contents inside scripts
 !/scripts/point_detection/
 !/scripts/point_detection/**

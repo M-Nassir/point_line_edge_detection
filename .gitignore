@@ -11,3 +11,7 @@ scratchpad/*
 # But do NOT ignore the point_detection folder and its contents inside scripts
 !/scripts/point_detection/
 !/scripts/point_detection/**
+scripts/point_detection/__pycache__/functions.cpython-39.pyc
+.gitignore
+scripts/point_detection/__pycache__/process_image.cpython-311.pyc
+scripts/point_detection/__pycache__/functions.cpython-311.pyc

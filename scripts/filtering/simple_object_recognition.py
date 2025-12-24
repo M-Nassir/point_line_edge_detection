@@ -20,11 +20,16 @@ that applied to the raw pixels and subsequent clustering.
 Semi-supervised learning is leveraged to learn names for different groupings
 and to differentiate or partition certain larger groups.
 
-An approach to learning image primitive features has been done many times
-before, with sparse coding being the first successful method. ICA has also
-been used as well as autoencoder and even K-means. Methods failed to build
-up subsequent layers of learning beyond the initial layer as their
-optimisation function was likely incorrect to begin with.
+Learning primitive image features has been a focus of research for decades,
+with sparse coding being one of the first successful approaches.
+Other techniques, such as Independent Component Analysis (ICA) and
+K-means clustering, have also been explored. However, these early methods
+faced challenges in extending learning beyond the initial feature layer,
+often due to limitations in their optimisation techniques or the absence
+of frameworks to support hierarchical learning. Autoencoders,
+while effective, emerged later as a key technique for learning data
+representations in deeper layers; however, this method requires large amounts
+of training data.
 
 Aside from the deep learning methods, other methods are research areas
 that were initially studied until deep learning took off.
@@ -85,7 +90,7 @@ Resources:
 process:
 
     1. read in the image
-    2. design the filter (have it learn by itself)
+    2. design the filter (or have it learn by itself)
     3. apply the filter
     4. observe the results
 
@@ -99,7 +104,8 @@ Research outputs:
         environment. No need to hand specify filters, learn through optimisation
         or learning through fiddling with weights from supervised backprop.
 
-        The environment programs the network.
+        The environment programs the network. (Perhaps through loss of filters
+                                               or at layer layers)
 
     3. A neural network for learning and classifying simple 2D images.
 
@@ -120,8 +126,8 @@ Paper titles:
 Experiment 1, Simple Object recognition:
 
     Feature learning and representation:
-            1. Get simple sets of images of triangles and squares
-            2. Filter image using RGC over 3 * 3 (generic RF's'), reduce image by same factor
+        1. Get simple sets of images of triangles and squares
+        2. Filter image using RGC over 3 * 3 (generic RF's'), reduce image by same factor
         2. learn V1 filters over 3 * 3
         3. form bag of words
         4. plot them geometrically in vector space according to frequency
@@ -149,7 +155,6 @@ Experiment 3: Real world images:
 # TODO: either use mnist or create 100 examples of squares and triangles manually (do slight data augmentation and save files)
 # TODO: apply k-means clustering of pixel level, RGC level and v1 level grouping and perception model
 # TODO: do the baseline k-means clustering on two MNIST digits first using raw pixel values.
-
 # RGV - fixed filters to get contrast information, v1 to get simple edges, v2 to get angles and junctions
 
 # %% Setup
@@ -167,17 +172,10 @@ from pathlib import Path
 import sys
 sys.path.append("../")
 
-import copy
-from ipywidgets import interact
-import ipywidgets as widgets
-
 import cv2
 from PIL import Image, ImageFilter
 from matplotlib import pyplot as plt
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider
-import matplotlib.image as mpimg
-from ipywidgets import interact, widgets
 from IPython.display import display
 
 from skimage.util import view_as_windows
@@ -189,6 +187,7 @@ from utils import get_rolling_windows
 from utils import plot_filter_image, plot_binary_image
 from point_detection.functions import show_plt_images
 from perception_nassir import Perception
+from filtering.v1_line_edge_filters import *
 
 # -------------------------------------------
 # set the parameters for script
@@ -214,8 +213,23 @@ binary_image_flag = False
 # whether to save the image to specified path
 image_save_switch = False
 
-# number of strides to take over an image using window size
+# number of strides to take over an image using window size, reduces image size
 stride_val = 2
+
+# %% Functions
+##############################################################################
+#
+#                             Functions
+#
+##############################################################################
+
+# Create windows from image
+def create_windows(img, kernel_size, stride_val):
+    windows = view_as_windows(img, kernel_size, step=stride_val)
+    num_windows = windows.shape[0] * windows.shape[1]
+    flattened_windows = windows.reshape(num_windows, -1).astype(int)
+
+    return flattened_windows, num_windows
 
 # %% Read Images
 ##############################################################################
@@ -226,10 +240,10 @@ stride_val = 2
 
 cwd = Path(os.getcwd())
 
-data_path = cwd / "data/"
+data_path = cwd.parent.parent / "data/"
 
 # Read the first line from the paths.txt file
-config_file_path = cwd / 'paths.txt'
+config_file_path = cwd.parent.parent / 'paths.txt'
 
 image_save_path = config_file_path.read_text().splitlines()[0].strip()
 print(image_save_path)
@@ -246,7 +260,7 @@ image_options = [
 ]
 
 # Select the desired image by its index (0-based)
-selected_image_index = 2
+selected_image_index = 4
 
 img_name = image_options[selected_image_index]
 print(f'Selected image: {img_name}')
@@ -398,11 +412,7 @@ def rgc_filter(
 #        from the raw pixel intensities.
 #
 # ---------------------------------------------------------------------------
-
-# Create windows from image
-windows = view_as_windows(img, kernel_size, step=stride_val)
-num_windows = windows.shape[0] * windows.shape[1]
-flattened_windows = windows.reshape(num_windows, -1).astype(int)
+flattened_windows, num_windows = create_windows(img, kernel_size, stride_val)
 
 # Preallocate response lists
 l1_filter_response_on = np.zeros(num_windows, dtype=np.uint8)
@@ -464,6 +474,8 @@ n, m = img.shape[:2]
 response_off = np.array(l1_filter_response_off)
 response_on = np.array(l1_filter_response_on)
 
+combined_response = np.maximum(response_off, response_on)
+
 # Calculate the number of windows based on the stride
 height = (n - kernel_size) // stride_val + 1
 width = (m - kernel_size) // stride_val + 1
@@ -473,16 +485,17 @@ if height > 0 and width > 0:
     # Reshape the filter responses correctly based on stride
     response_off = response_off.reshape(height, width)
     response_on = response_on.reshape(height, width)
+    combined_response = combined_response.reshape(height, width)
 else:
     raise ValueError("Invalid dimensions for the response arrays with the given stride value.")
 
 
 # Prepare titles and images for plotting
-titles = ["Original", "Response Off", "Response On", "Canny"]
-images = [img, response_off, response_on, canny_edges]
+titles = ["Original", "Response Off", "Response On", "Canny", "combined response"]
+images = [img, response_off, response_on, canny_edges, combined_response]
 
 # Create a figure and axes
-fig, axarr = plt.subplots(1, 4, figsize=(20, 8))
+fig, axarr = plt.subplots(1, 5, figsize=(20, 8))
 
 # Plot each image with its title
 for ax, title, image in zip(axarr, titles, images):
@@ -493,25 +506,66 @@ for ax, title, image in zip(axarr, titles, images):
 # %% Learning V1 filters
 # ---------------------------------------------------------------------------
 #
-#        Combine the off and on response images, then learn filters
+#       Combine the off and on response images, then learn filters
 #       through experience
 #
 # ---------------------------------------------------------------------------
+# 8 straight filters could be learned, or could be innately processed. We
+# choose to learn these innately, and then upon experience keep only those
+# that are relevant to the environment.
 
-# create windows
-# Create windows from image
+# create windows from each response image
+windows_v1, num_windows_v1 = create_windows(combined_response,
+                                            kernel_size=3,
+                                            stride_val=1)
 
-def create_windows(img, kernel_size, stride_val):
-    windows = view_as_windows(img, kernel_size, step=stride_val)
-    num_windows = windows.shape[0] * windows.shape[1]
-    flattened_windows = windows.reshape(num_windows, -1).astype(int)
+# initialise classifier
+clf = Perception()
 
-    return flattened_windows
+def v1_simple_process(data, idx_excite, idx_inhib, line_angle):
+    clf.fit_predict(data)
+    labels = clf.labels_
 
-windows_resp_on = create_windows(response_on, kernel_size=3, stride_val=1)
-windows_resp_off = create_windows(response_off, kernel_size=3, stride_val=1)
+    if np.sum(labels[idx_inhib]) > 0 or np.sum(labels[idx_excite]) != 3:
+        return False, None  # No trigger
+    else:
+        return True, line_angle  # Trigger and return the angle
 
+# Get excitation and inhibition indices for vertical line detection
+idx_excite, idx_inhib, line_angle = get_left_vertical_line()
 
+v1_filter_response = \
+            Parallel(n_jobs=-1)(delayed(v1_simple_process)\
+            (data, idx_excite, idx_inhib, line_angle=line_angle) for data in windows_v1)
+
+line_angles = [x for trigger, x in v1_filter_response]
+from collections import Counter
+line_angles_value_counts = Counter(line_angles)
+
+# Convert the response to 255 or 0 directly within the Parallel process
+bool_values_v1_response = [255 if trigger else 0 for trigger, _ in v1_filter_response]
+
+# reshape into an image
+# Calculate the expected shape after applying a 3x3 kernel with stride 1
+n, m = combined_response.shape[:2]
+filtered_height = (n - kernel_size) // 1+1 # After applying 3x3 kernel with stride 1
+filtered_width = (m - kernel_size) // 1+1
+expected_size = filtered_height * filtered_width
+
+# Ensure the total size matches expected size
+if len(bool_values) != expected_size:
+    raise ValueError(f"Data size mismatch. Expected {expected_size}, but got {len(bool_values)}.")
+
+# Reshape the array
+bool_values_v1_response_img = np.array(bool_values_v1_response,
+                                       dtype=np.uint8).reshape((filtered_height,
+                                                                filtered_width))
+
+# Display the reshaped array as an image
+plt.imshow(bool_values_v1_response_img, cmap='gray', interpolation='nearest')
+plt.title("V1 simple cell response Image")
+plt.axis('off')
+plt.show()
 
 # %%
 # ---------------------------------------------------------------------------

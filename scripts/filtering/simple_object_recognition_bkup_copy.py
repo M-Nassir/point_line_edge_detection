@@ -225,7 +225,7 @@ print(image_save_path)
 # %% read the images
 
 image_options = [
-    # img_name = "lines_single_pixel_thick.gif",
+    "lines_single_pixel_thick.gif",
     # img_name = "circles_matlab.png",
     "mach_bands.png",
     "tri1.png",
@@ -233,7 +233,7 @@ image_options = [
 ]
 
 # Select the desired image by its index (0-based)
-selected_image_index = 1
+selected_image_index = 0
 
 img_name = image_options[selected_image_index]
 print(f'Selected image: {img_name}')

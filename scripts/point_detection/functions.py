@@ -5,7 +5,7 @@ sys.path.append('../')
 
 import numpy as np
 from perception_nassir import Perception
-# from utils import get_rolling_windows
+from utils import get_rolling_windows
 from matplotlib import pyplot as plt
 from PIL import Image
 from pathlib import Path
